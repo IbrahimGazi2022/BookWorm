@@ -10,6 +10,8 @@ import {
   BookDetails,
   MyLibrary,
   ManageUsers,
+  ManageReviews,
+  ManageTutorials,
 } from "./components/index.js";
 
 const App = () => {
@@ -26,6 +28,8 @@ const App = () => {
         <Route path="/admin/genres" element={user?.role === "Admin" ? <ManageGenres /> : <Navigate to="/" />} />
         <Route path="/admin/books" element={user?.role === "Admin" ? <ManageBooks /> : <Navigate to="/" />} />
         <Route path="/admin/users" element={user?.role === "Admin" ? <ManageUsers /> : <Navigate to="/" />} />
+        <Route path="/admin/reviews" element={user?.role === "Admin" ? <ManageReviews /> : <Navigate to="/" />} />
+        <Route path="/admin/tutorials" element={user?.role === "Admin" ? <ManageTutorials /> : <Navigate to="/" />} />
 
         {/* --- USER ROUTES --- */}
         <Route path="/my-library" element={user ? <MyLibrary /> : <Navigate to="/" />} />

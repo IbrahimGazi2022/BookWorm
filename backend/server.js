@@ -7,6 +7,8 @@ import authRoutes from "./routes/authRoutes.js";
 import genreRoutes from "./routes/genreRoutes.js";
 import bookRoutes from "./routes/bookRoutes.js";
 import shelfRoutes from "./routes/shelfRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
+import tutorialRoutes from "./routes/tutorialRoutes.js";
 
 dotenv.config();
 
@@ -34,6 +36,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/genres", genreRoutes);
 app.use("/api/shelves", shelfRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/tutorials", tutorialRoutes);
 
 app.listen(PORT, () => {
     console.log(`Node Server Running In ${process.env.NODE_ENV} Mode On Port ${PORT}`);

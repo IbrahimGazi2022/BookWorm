@@ -88,7 +88,10 @@ const ManageUsers = () => {
                                 <tr key={user._id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4">
                                         <img
-                                            src={`${import.meta.env.VITE_API_URL}/${user.photo}`}
+                                            src={user.photo.startsWith('http')
+                                                ? user.photo
+                                                : `${import.meta.env.VITE_API_URL}/${user.photo}`
+                                            }
                                             alt={user.name}
                                             className="w-10 h-10 rounded-full object-cover"
                                         />

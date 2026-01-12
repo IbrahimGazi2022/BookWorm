@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Book, Users, MessageSquare, Tag, Plus, TrendingUp } from 'lucide-react';
+import { Book, Users, MessageSquare, Tag, Plus, TrendingUp, Youtube } from 'lucide-react';
 import { getAllUsers } from '../../services/userService';
 import { getAllBooks } from '../../services/bookService';
 import { getAllGenres } from '../../services/genreService';
+import { getPendingReviews } from '../../services/reviewService';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -23,11 +24,12 @@ const AdminDashboard = () => {
             const booksData = await getAllBooks();
             const genresData = await getAllGenres();
             const usersData = await getAllUsers();
-            
+            const reviewsData = await getPendingReviews();
+
             setStats([
                 { id: 1, title: 'Total Books', value: booksData.books.length.toString(), icon: Book, color: 'bg-blue-500', change: '+12%' },
                 { id: 2, title: 'Total Users', value: usersData.users.length.toString(), icon: Users, color: 'bg-green-500', change: '+8%' },
-                { id: 3, title: 'Pending Reviews', value: '0', icon: MessageSquare, color: 'bg-yellow-500', change: '+5' },
+                { id: 3, title: 'Pending Reviews', value: reviewsData.reviews.length.toString(), icon: MessageSquare, color: 'bg-yellow-500', change: `+${reviewsData.reviews.length}` }, // UPDATED
                 { id: 4, title: 'Total Genres', value: genresData.genres.length.toString(), icon: Tag, color: 'bg-purple-500', change: '+2' },
             ]);
         } catch (error) {
@@ -40,6 +42,7 @@ const AdminDashboard = () => {
         { id: 2, title: 'Manage Genres', icon: Tag, link: '/admin/genres', color: 'bg-secondary' },
         { id: 3, title: 'Moderate Reviews', icon: MessageSquare, link: '/admin/reviews', color: 'bg-secondary' },
         { id: 4, title: 'Manage Users', icon: Users, link: '/admin/users', color: 'bg-secondary' },
+        { id: 5, title: 'Manage Tutorials', icon: Youtube, link: '/admin/tutorials', color: 'bg-secondary' }, // NEW LINE
     ];
 
     return (
