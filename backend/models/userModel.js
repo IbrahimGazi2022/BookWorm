@@ -27,11 +27,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       default: "uploads/default-avatar.jpg"
     },
-    role: {                            
+    role: {
       type: String,
       enum: ["User", "Admin"],
       default: "User"
-    }
+    },
   },
 
   {

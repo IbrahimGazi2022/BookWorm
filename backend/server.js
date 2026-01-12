@@ -4,13 +4,15 @@ import path from "path";
 import cors from "cors";
 import connectDB from "./DB/connectDB.js";
 import authRoutes from "./routes/authRoutes.js";
+import genreRoutes from "./routes/genreRoutes.js";
+import bookRoutes from "./routes/bookRoutes.js";
 
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 const app = express();
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); 
+app.use(express.urlencoded({ extended: true }));
 app.use(
     cors({
         origin: ["http://localhost:5173", "https://book-worm-lime.vercel.app"],
@@ -18,6 +20,7 @@ app.use(
         credentials: true,
     })
 );
+
 app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
 
 connectDB();
@@ -27,6 +30,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/books", bookRoutes);
+app.use("/api/genres", genreRoutes);
 
 app.listen(PORT, () => {
     console.log(`Node Server Running In ${process.env.NODE_ENV} Mode On Port ${PORT}`);
