@@ -6,3 +6,8 @@ export { default as Register } from "../components/auth/Register";
 export { default as ManageGenres } from "../components/admin/ManageGenres";
 export { default as ManageBooks } from "../components/admin/ManageBooks";
 export { default as AdminDashboard } from "../components/admin/AdminDashboard";
+
+// -- USER COMPONENTS --
+export { default as BrowseBooks } from "../components/user/BrowseBooks";
+export { default as BookDetails } from "../components/user/BookDetails";
+export { default as MyLibrary } from "../components/user/MyLibrary";
