@@ -17,11 +17,15 @@ const shelfSchema = new mongoose.Schema(
             enum: ["wantToRead", "currentlyReading", "read"],
             required: true
         },
-        progress: {
+        pagesRead: {
             type: Number,
             default: 0,
-            min: 0,
-            max: 100
+            min: 0
+        },
+        totalPages: {
+            type: Number,
+            default: 0,
+            min: 0
         }
     },
     { timestamps: true }

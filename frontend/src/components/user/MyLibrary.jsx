@@ -9,6 +9,7 @@ const MyLibrary = () => {
     const [activeShelf, setActiveShelf] = useState("wantToRead");
     const [shelves, setShelves] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [editingProgress, setEditingProgress] = useState({});
 
     const shelfConfig = [
         { id: "wantToRead", name: "Want to Read", icon: Book, color: "bg-blue-500" },
@@ -44,14 +45,25 @@ const MyLibrary = () => {
         }
     };
 
-    const handleProgressUpdate = async (shelfId, newProgress) => {
+    const handleProgressUpdate = async (shelfId, pagesRead, totalPages) => {
         try {
-            await updateProgress(shelfId, { progress: newProgress });
+            await updateProgress(shelfId, { pagesRead, totalPages });
             toast.success("Progress updated");
             fetchShelves();
+            setEditingProgress({});
         } catch (error) {
             toast.error("Failed to update progress");
         }
+    };
+
+    const handleInputChange = (shelfId, field, value) => {
+        setEditingProgress(prev => ({
+            ...prev,
+            [shelfId]: {
+                ...prev[shelfId],
+                [field]: parseInt(value) || 0
+            }
+        }));
     };
 
     // FILTER BOOKS BY ACTIVE SHELF
@@ -117,65 +129,102 @@ const MyLibrary = () => {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {filteredBooks.map((shelf) => (
-                                    <div
-                                        key={shelf._id}
-                                        className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300"
-                                    >
-                                        {/* BOOK COVER */}
+                                {filteredBooks.map((shelf) => {
+                                    const currentPagesRead = editingProgress[shelf._id]?.pagesRead ?? shelf.pagesRead;
+                                    const currentTotalPages = editingProgress[shelf._id]?.totalPages ?? shelf.totalPages;
+                                    const progressPercent = currentTotalPages > 0
+                                        ? Math.min(100, Math.round((currentPagesRead / currentTotalPages) * 100))
+                                        : 0;
+
+                                    return (
                                         <div
-                                            onClick={() => navigate(`/books/${shelf.book._id}`)}
-                                            className="relative h-64 overflow-hidden cursor-pointer"
+                                            key={shelf._id}
+                                            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300"
                                         >
-                                            <img
-                                                src={shelf.book.coverImage}
-                                                alt={shelf.book.title}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-
-                                        {/* BOOK INFO */}
-                                        <div className="p-4">
-                                            <h3 className="font-bold text-lg text-gray-800 mb-1 line-clamp-1">
-                                                {shelf.book.title}
-                                            </h3>
-                                            <p className="text-sm text-gray-600 mb-3">by {shelf.book.author}</p>
-
-                                            {/* PROGRESS BAR (for Currently Reading) */}
-                                            {shelf.shelfType === "currentlyReading" && (
-                                                <div className="mb-3">
-                                                    <div className="flex justify-between text-xs text-gray-600 mb-1">
-                                                        <span>Progress</span>
-                                                        <span>{shelf.progress}%</span>
-                                                    </div>
-                                                    <div className="w-full bg-gray-200 rounded-full h-2">
-                                                        <div
-                                                            className="bg-yellow-500 h-2 rounded-full transition-all"
-                                                            style={{ width: `${shelf.progress}%` }}
-                                                        />
-                                                    </div>
-                                                    <input
-                                                        type="range"
-                                                        min="0"
-                                                        max="100"
-                                                        value={shelf.progress}
-                                                        onChange={(e) => handleProgressUpdate(shelf._id, parseInt(e.target.value))}
-                                                        className="w-full mt-2"
-                                                    />
-                                                </div>
-                                            )}
-
-                                            {/* REMOVE BUTTON */}
-                                            <button
-                                                onClick={() => handleRemove(shelf._id)}
-                                                className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 flex items-center justify-center gap-2"
+                                            {/* BOOK COVER */}
+                                            <div
+                                                onClick={() => navigate(`/books/${shelf.book._id}`)}
+                                                className="relative h-64 overflow-hidden cursor-pointer"
                                             >
-                                                <Trash2 className="w-4 h-4" />
-                                                Remove
-                                            </button>
+                                                <img
+                                                    src={shelf.book.coverImage}
+                                                    alt={shelf.book.title}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+
+                                            {/* BOOK INFO */}
+                                            <div className="p-4">
+                                                <h3 className="font-bold text-lg text-gray-800 mb-1 line-clamp-1">
+                                                    {shelf.book.title}
+                                                </h3>
+                                                <p className="text-sm text-gray-600 mb-3">by {shelf.book.author}</p>
+
+                                                {/* PROGRESS TRACKING (for Currently Reading) */}
+                                                {shelf.shelfType === "currentlyReading" && (
+                                                    <div className="mb-3 space-y-3">
+                                                        {/* PROGRESS BAR */}
+                                                        <div>
+                                                            <div className="flex justify-between text-xs text-gray-600 mb-1">
+                                                                <span>Progress</span>
+                                                                <span>{progressPercent}%</span>
+                                                            </div>
+                                                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                                                <div
+                                                                    className="bg-yellow-500 h-2 rounded-full transition-all"
+                                                                    style={{ width: `${progressPercent}%` }}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* PAGES INPUT */}
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <div>
+                                                                <label className="text-xs text-gray-600 block mb-1">Pages Read</label>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    value={currentPagesRead}
+                                                                    onChange={(e) => handleInputChange(shelf._id, 'pagesRead', e.target.value)}
+                                                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs text-gray-600 block mb-1">Total Pages</label>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    value={currentTotalPages}
+                                                                    onChange={(e) => handleInputChange(shelf._id, 'totalPages', e.target.value)}
+                                                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* UPDATE BUTTON */}
+                                                        {(editingProgress[shelf._id]) && (
+                                                            <button
+                                                                onClick={() => handleProgressUpdate(shelf._id, currentPagesRead, currentTotalPages)}
+                                                                className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 text-sm font-semibold"
+                                                            >
+                                                                Update Progress
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* REMOVE BUTTON */}
+                                                <button
+                                                    onClick={() => handleRemove(shelf._id)}
+                                                    className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 flex items-center justify-center gap-2"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    Remove
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

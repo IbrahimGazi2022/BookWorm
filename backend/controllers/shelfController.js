@@ -4,8 +4,8 @@ import Book from "../models/bookModel.js";
 // ADD BOOK TO SHELF
 export const addToShelf = async (req, res) => {
     try {
-        const { bookId, shelfType } = req.body;
-        const userId = req.user._id; // From auth middleware
+        const { bookId, shelfType, totalPages } = req.body;
+        const userId = req.user._id;
 
         if (!bookId || !shelfType) {
             return res.status(400).json({ message: "Book ID and shelf type are required" });
@@ -24,7 +24,10 @@ export const addToShelf = async (req, res) => {
             // UPDATE SHELF TYPE
             existingShelf.shelfType = shelfType;
             if (shelfType === "wantToRead") {
-                existingShelf.progress = 0;
+                existingShelf.pagesRead = 0;
+            }
+            if (totalPages) {
+                existingShelf.totalPages = totalPages;
             }
             await existingShelf.save();
             return res.status(200).json({ message: "Book moved to " + shelfType, shelf: existingShelf });
@@ -35,7 +38,8 @@ export const addToShelf = async (req, res) => {
             user: userId,
             book: bookId,
             shelfType,
-            progress: 0
+            pagesRead: 0,
+            totalPages: totalPages || 0
         });
 
         res.status(201).json({ message: "Book added to shelf", shelf });
@@ -68,22 +72,24 @@ export const getUserShelves = async (req, res) => {
 export const updateProgress = async (req, res) => {
     try {
         const { shelfId } = req.params;
-        const { progress } = req.body;
+        const { pagesRead, totalPages } = req.body;
         const userId = req.user._id;
-
-        if (progress < 0 || progress > 100) {
-            return res.status(400).json({ message: "Progress must be between 0 and 100" });
-        }
 
         const shelf = await Shelf.findOne({ _id: shelfId, user: userId });
         if (!shelf) {
             return res.status(404).json({ message: "Shelf entry not found" });
         }
 
-        shelf.progress = progress;
+        // UPDATE PAGES
+        if (pagesRead !== undefined) {
+            shelf.pagesRead = Math.max(0, pagesRead);
+        }
+        if (totalPages !== undefined) {
+            shelf.totalPages = Math.max(0, totalPages);
+        }
 
-        // AUTO MOVE TO READ IF 100%
-        if (progress === 100 && shelf.shelfType === "currentlyReading") {
+        // AUTO MOVE TO READ IF COMPLETED
+        if (shelf.totalPages > 0 && shelf.pagesRead >= shelf.totalPages && shelf.shelfType === "currentlyReading") {
             shelf.shelfType = "read";
         }
 
