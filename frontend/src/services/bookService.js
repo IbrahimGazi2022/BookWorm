@@ -1,7 +1,7 @@
 import API from "../utils/api";
 
 export const createBook = async (bookData) => {
-    const response = await API.post("/books", bookData, {
+    const response = await API.post("/api/books", bookData, {
         headers: {
             'Content-Type': 'multipart/form-data'
         }
@@ -10,17 +10,17 @@ export const createBook = async (bookData) => {
 };
 
 export const getAllBooks = async () => {
-    const response = await API.get("/books");
+    const response = await API.get("/api/books");
     return response.data;
 };
 
 export const getBookById = async (id) => {
-    const response = await API.get(`/books/${id}`);
+    const response = await API.get(`/api/books/${id}`);
     return response.data;
 };
 
 export const updateBook = async (id, bookData) => {
-    const response = await API.put(`/books/${id}`, bookData, {
+    const response = await API.put(`/api/books/${id}`, bookData, {
         headers: {
             'Content-Type': 'multipart/form-data'
         }
@@ -29,6 +29,6 @@ export const updateBook = async (id, bookData) => {
 };
 
 export const deleteBook = async (id) => {
-    const response = await API.delete(`/books/${id}`);
+    const response = await API.delete(`/api/books/${id}`);
     return response.data;
 };

@@ -94,3 +94,47 @@ export const loginUser = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+
+// GET ALL USERS (ADMIN ONLY)
+export const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({}).select("-password");
+        res.status(200).json({ users });
+    } catch (error) {
+        console.error("Get Users Error:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+// UPDATE USER ROLE (ADMIN ONLY)
+export const updateUserRole = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { role } = req.body;
+
+        // CHECK IF ROLE IS VALID
+        if (!role || !["User", "Admin"].includes(role)) {
+            return res.status(400).json({ message: "Invalid role" });
+        }
+
+        // FIND USER AND UPDATE ROLE
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { role },
+            { new: true }
+        ).select("-password");
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({
+            message: "User role updated successfully",
+            user
+        });
+    } catch (error) {
+        console.error("Update Role Error:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};

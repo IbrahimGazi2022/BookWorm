@@ -8,7 +8,8 @@ import {
   AdminDashboard,
   BrowseBooks,
   BookDetails,
-  MyLibrary
+  MyLibrary,
+  ManageUsers,
 } from "./components/index.js";
 
 const App = () => {
@@ -24,6 +25,7 @@ const App = () => {
         <Route path="/admin/dashboard" element={user?.role === "Admin" ? <AdminDashboard /> : <Navigate to="/" />} />
         <Route path="/admin/genres" element={user?.role === "Admin" ? <ManageGenres /> : <Navigate to="/" />} />
         <Route path="/admin/books" element={user?.role === "Admin" ? <ManageBooks /> : <Navigate to="/" />} />
+        <Route path="/admin/users" element={user?.role === "Admin" ? <ManageUsers /> : <Navigate to="/" />} />
 
         {/* --- USER ROUTES --- */}
         <Route path="/my-library" element={user ? <MyLibrary /> : <Navigate to="/" />} />

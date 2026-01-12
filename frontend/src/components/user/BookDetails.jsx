@@ -3,12 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Star, ArrowLeft, Loader } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import { getBookById } from "../../services/bookService";
+import { addToShelf } from "../../services/shelfService";
 
 const BookDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [book, setBook] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [addingToShelf, setAddingToShelf] = useState(false);
 
     useEffect(() => {
         fetchBook();
@@ -24,6 +26,18 @@ const BookDetails = () => {
             navigate("/browse");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAddToShelf = async (shelfType) => {
+        try {
+            setAddingToShelf(true);
+            await addToShelf({ bookId: id, shelfType });
+            toast.success(`Added to ${shelfType === "wantToRead" ? "Want to Read" : shelfType === "currentlyReading" ? "Currently Reading" : "Read"}`);
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to add to shelf");
+        } finally {
+            setAddingToShelf(false);
         }
     };
 
@@ -102,12 +116,27 @@ const BookDetails = () => {
                             </div>
 
                             {/* ACTION BUTTONS */}
-                            <div className="flex gap-4">
-                                <button className="bg-secondary text-white px-6 py-3 rounded-lg hover:bg-opacity-90 font-semibold">
-                                    Add to Want to Read
+                            <div className="flex flex-wrap gap-3">
+                                <button
+                                    onClick={() => handleAddToShelf("wantToRead")}
+                                    disabled={addingToShelf}
+                                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {addingToShelf ? <Loader className="w-5 h-5 animate-spin" /> : "Want to Read"}
                                 </button>
-                                <button className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 font-semibold">
-                                    Add to Currently Reading
+                                <button
+                                    onClick={() => handleAddToShelf("currentlyReading")}
+                                    disabled={addingToShelf}
+                                    className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 font-semibold disabled:opacity-50"
+                                >
+                                    Currently Reading
+                                </button>
+                                <button
+                                    onClick={() => handleAddToShelf("read")}
+                                    disabled={addingToShelf}
+                                    className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold disabled:opacity-50"
+                                >
+                                    Mark as Read
                                 </button>
                             </div>
                         </div>
