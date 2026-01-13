@@ -1,4 +1,6 @@
 import Book from "../models/bookModel.js";
+import Shelf from "../models/shelfModel.js";
+import Review from "../models/reviewModel.js";
 
 // CREATE BOOK (Admin only)
 export const createBook = async (req, res) => {
@@ -99,6 +101,133 @@ export const deleteBook = async (req, res) => {
         res.status(200).json({ message: "Book deleted successfully" });
     } catch (error) {
         console.error("Delete Book Error:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+
+// GET PERSONALIZED RECOMMENDATIONS (USER)
+export const getRecommendations = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // GET USER'S READ BOOKS
+        const readBooks = await Shelf.find({
+            user: userId,
+            shelfType: "read"
+        }).populate({
+            path: "book",
+            populate: { path: "genre" }
+        });
+
+        let recommendations = [];
+
+        // IF USER HAS 3+ READ BOOKS - USE SMART ALGORITHM
+        if (readBooks.length >= 3) {
+            // COUNT GENRE FREQUENCY
+            const genreCount = {};
+            readBooks.forEach(shelf => {
+                const genreId = shelf.book.genre._id.toString();
+                genreCount[genreId] = (genreCount[genreId] || 0) + 1;
+            });
+
+            // GET TOP 3 GENRES
+            const topGenres = Object.entries(genreCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .map(([genreId]) => genreId);
+
+            // GET USER'S AVERAGE RATING
+            const userReviews = await Review.find({ user: userId });
+            const avgUserRating = userReviews.length > 0
+                ? userReviews.reduce((sum, r) => sum + r.rating, 0) / userReviews.length
+                : 3;
+
+            // GET BOOKS FROM FAVORITE GENRES (EXCLUDE ALREADY READ)
+            const readBookIds = readBooks.map(shelf => shelf.book._id.toString());
+
+            const genreBooks = await Book.find({
+                genre: { $in: topGenres },
+                _id: { $nin: readBookIds }
+            }).populate("genre", "name").limit(50);
+
+            // GET REVIEW STATS FOR EACH BOOK
+            const booksWithStats = await Promise.all(
+                genreBooks.map(async (book) => {
+                    const reviews = await Review.find({
+                        book: book._id,
+                        status: "Approved"
+                    });
+
+                    const avgRating = reviews.length > 0
+                        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+                        : 0;
+
+                    const shelvedCount = await Shelf.countDocuments({ book: book._id });
+
+                    // CALCULATE SCORE (closer to user's avg rating + popularity)
+                    const ratingDiff = Math.abs(avgRating - avgUserRating);
+                    const score = (5 - ratingDiff) * 0.6 + (shelvedCount * 0.4);
+
+                    return {
+                        ...book.toObject(),
+                        avgRating,
+                        shelvedCount,
+                        score,
+                        reason: `Matches your preference for ${book.genre.name} (${genreCount[book.genre._id]} books read)`
+                    };
+                })
+            );
+
+            // SORT BY SCORE AND TAKE TOP 18
+            recommendations = booksWithStats
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 18);
+        }
+
+        // FALLBACK - IF LESS THAN 3 BOOKS OR NOT ENOUGH RECOMMENDATIONS
+        if (recommendations.length < 12) {
+            const readBookIds = readBooks.map(shelf => shelf.book._id.toString());
+
+            // GET POPULAR BOOKS (MOST SHELVED + HIGH RATED)
+            const popularBooks = await Book.find({
+                _id: { $nin: readBookIds }
+            }).populate("genre", "name").limit(30);
+
+            const popularWithStats = await Promise.all(
+                popularBooks.map(async (book) => {
+                    const reviews = await Review.find({
+                        book: book._id,
+                        status: "Approved"
+                    });
+
+                    const avgRating = reviews.length > 0
+                        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+                        : 0;
+
+                    const shelvedCount = await Shelf.countDocuments({ book: book._id });
+
+                    return {
+                        ...book.toObject(),
+                        avgRating,
+                        shelvedCount,
+                        score: avgRating * 0.5 + shelvedCount * 0.5,
+                        reason: "Popular among readers"
+                    };
+                })
+            );
+
+            // COMBINE WITH EXISTING RECOMMENDATIONS
+            const combined = [...recommendations, ...popularWithStats]
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 18);
+
+            recommendations = combined;
+        }
+
+        res.status(200).json({ recommendations });
+    } catch (error) {
+        console.error("Get Recommendations Error:", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };

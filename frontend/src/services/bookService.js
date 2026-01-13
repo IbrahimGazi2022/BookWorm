@@ -32,3 +32,8 @@ export const deleteBook = async (id) => {
     const response = await API.delete(`/api/books/${id}`);
     return response.data;
 };
+
+export const getRecommendations = async () => {
+    const response = await API.get("/api/books/recommendations");
+    return response.data;
+};

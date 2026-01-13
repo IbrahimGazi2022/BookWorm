@@ -12,6 +12,7 @@ import {
   ManageUsers,
   ManageReviews,
   ManageTutorials,
+  UserDashboard,
 } from "./components/index.js";
 
 const App = () => {
@@ -20,7 +21,7 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={user ? <Navigate to={user.role === "Admin" ? "/admin/dashboard" : "/browse"} /> : <Login />} />
+        <Route path="/" element={user ? <Navigate to={user.role === "Admin" ? "/admin/dashboard" : "/dashboard"} /> : <Login />} />
         <Route path="/register" element={<Register />} />
 
         {/* --- ADMIN ROUTES --- */}
@@ -32,6 +33,7 @@ const App = () => {
         <Route path="/admin/tutorials" element={user?.role === "Admin" ? <ManageTutorials /> : <Navigate to="/" />} />
 
         {/* --- USER ROUTES --- */}
+        <Route path="/dashboard" element={user?.role !== "Admin" ? <UserDashboard /> : <Navigate to="/" />} />
         <Route path="/my-library" element={user ? <MyLibrary /> : <Navigate to="/" />} />
         <Route path="/browse" element={user ? <BrowseBooks /> : <Navigate to="/" />} />
         <Route path="/books/:id" element={user ? <BookDetails /> : <Navigate to="/" />} />
