@@ -1,5 +1,6 @@
 import Shelf from "../models/shelfModel.js";
 import Book from "../models/bookModel.js";
+import Review from "../models/reviewModel.js";
 
 // ADD BOOK TO SHELF
 export const addToShelf = async (req, res) => {
@@ -116,6 +117,128 @@ export const removeFromShelf = async (req, res) => {
         res.status(200).json({ message: "Book removed from shelf" });
     } catch (error) {
         console.error("Remove from Shelf Error:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+
+// GET USER READING STATS
+export const getUserStats = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const currentYear = new Date().getFullYear();
+
+        // GET ALL READ BOOKS
+        const readBooks = await Shelf.find({
+            user: userId,
+            shelfType: "read"
+        }).populate({
+            path: "book",
+            populate: { path: "genre" }
+        });
+
+        // 1. BOOKS READ THIS YEAR
+        const booksThisYear = readBooks.filter(shelf => {
+            return new Date(shelf.updatedAt).getFullYear() === currentYear;
+        }).length;
+
+        // 2. TOTAL PAGES READ
+        const totalPages = readBooks.reduce((sum, shelf) => {
+            return sum + (shelf.totalPages || 0);
+        }, 0);
+
+        // 3. AVERAGE RATING GIVEN
+        const userReviews = await Review.find({ user: userId, status: "Approved" });
+        const avgRating = userReviews.length > 0
+            ? (userReviews.reduce((sum, r) => sum + r.rating, 0) / userReviews.length).toFixed(1)
+            : 0;
+
+        // 4. FAVORITE GENRE BREAKDOWN
+        const genreCount = {};
+        readBooks.forEach(shelf => {
+            if (shelf.book && shelf.book.genre) {
+                const genreName = shelf.book.genre.name;
+                genreCount[genreName] = (genreCount[genreName] || 0) + 1;
+            }
+        });
+
+        const favoriteGenres = Object.entries(genreCount)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+
+        // 5. READING STREAK (days with progress updates)
+        const progressUpdates = await Shelf.find({
+            user: userId,
+            shelfType: "currentlyReading",
+            pagesRead: { $gt: 0 }
+        }).sort({ updatedAt: -1 });
+
+        let streak = 0;
+        let lastDate = null;
+
+        for (let shelf of progressUpdates) {
+            const updateDate = new Date(shelf.updatedAt).toDateString();
+
+            if (!lastDate) {
+                streak = 1;
+                lastDate = updateDate;
+            } else if (lastDate !== updateDate) {
+                const dayDiff = Math.floor((new Date(lastDate) - new Date(updateDate)) / (1000 * 60 * 60 * 24));
+                if (dayDiff === 1) {
+                    streak++;
+                    lastDate = updateDate;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // 6. MONTHLY BOOKS READ (for bar chart)
+        const monthlyData = Array(12).fill(0).map((_, i) => ({
+            month: new Date(currentYear, i).toLocaleString('default', { month: 'short' }),
+            books: 0
+        }));
+
+        readBooks.forEach(shelf => {
+            const month = new Date(shelf.updatedAt).getMonth();
+            const year = new Date(shelf.updatedAt).getFullYear();
+            if (year === currentYear) {
+                monthlyData[month].books++;
+            }
+        });
+
+        // 7. PAGES OVER TIME (for line chart) - Last 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const recentProgress = await Shelf.find({
+            user: userId,
+            updatedAt: { $gte: thirtyDaysAgo }
+        }).sort({ updatedAt: 1 });
+
+        const pagesOverTime = [];
+        let cumulativePages = 0;
+
+        recentProgress.forEach(shelf => {
+            cumulativePages += (shelf.pagesRead || 0);
+            pagesOverTime.push({
+                date: new Date(shelf.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                pages: cumulativePages
+            });
+        });
+
+        res.status(200).json({
+            booksThisYear,
+            totalPages,
+            avgRating: parseFloat(avgRating),
+            totalBooksRead: readBooks.length,
+            readingStreak: streak,
+            favoriteGenres,
+            monthlyBooks: monthlyData,
+            pagesOverTime
+        });
+    } catch (error) {
+        console.error("Get User Stats Error:", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };

@@ -19,3 +19,8 @@ export const removeFromShelf = async (shelfId) => {
     const response = await API.delete(`/api/shelves/${shelfId}`);
     return response.data;
 };
+
+export const getUserStats = async () => {
+    const response = await API.get("/api/shelves/stats");
+    return response.data;
+};
