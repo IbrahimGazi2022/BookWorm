@@ -15,6 +15,7 @@ export { default as BrowseBooks } from "../components/user/BrowseBooks";
 export { default as BookDetails } from "../components/user/BookDetails";
 export { default as MyLibrary } from "../components/user/MyLibrary";
 export { default as UserDashboard } from "../components/user/UserDashboard";
+export { default as Tutorials } from "../components/user/Tutorials";
 
 // -- LAYOUT COMPONENTS --
 export { default as Layout } from "./layout/Layout";

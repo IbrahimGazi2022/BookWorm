@@ -13,6 +13,7 @@ import {
   ManageReviews,
   ManageTutorials,
   UserDashboard,
+  Tutorials,
 } from "./components/index.js";
 import Layout from "./components/layout/Layout";
 
@@ -41,6 +42,7 @@ const App = () => {
         <Route path="/my-library" element={isAuthenticated ? <Layout><MyLibrary /></Layout> : <Navigate to="/" />} />
         <Route path="/browse" element={isAuthenticated ? <Layout><BrowseBooks /></Layout> : <Navigate to="/" />} />
         <Route path="/books/:id" element={isAuthenticated ? <Layout><BookDetails /></Layout> : <Navigate to="/" />} />
+        <Route path="/tutorials" element={isAuthenticated ? <Layout><Tutorials /></Layout> : <Navigate to="/" />} />
       </Routes>
     </Router>
   );
