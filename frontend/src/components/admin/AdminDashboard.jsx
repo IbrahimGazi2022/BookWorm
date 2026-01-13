@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Book, Users, MessageSquare, Tag, Plus, TrendingUp, Youtube } from 'lucide-react';
-import { getAllUsers } from '../../services/userService';
-import { getAllBooks } from '../../services/bookService';
-import { getAllGenres } from '../../services/genreService';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { getAdminStats } from '../../services/bookService';
 import { getPendingReviews } from '../../services/reviewService';
 
 const AdminDashboard = () => {
@@ -14,6 +13,9 @@ const AdminDashboard = () => {
         { id: 3, title: 'Pending Reviews', value: '0', icon: MessageSquare, color: 'bg-yellow-500', change: '+0' },
         { id: 4, title: 'Total Genres', value: '0', icon: Tag, color: 'bg-purple-500', change: '+0' },
     ]);
+    const [booksPerGenre, setBooksPerGenre] = useState([]);
+
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
 
     useEffect(() => {
         fetchStats();
@@ -21,17 +23,17 @@ const AdminDashboard = () => {
 
     const fetchStats = async () => {
         try {
-            const booksData = await getAllBooks();
-            const genresData = await getAllGenres();
-            const usersData = await getAllUsers();
+            const adminData = await getAdminStats();
             const reviewsData = await getPendingReviews();
 
             setStats([
-                { id: 1, title: 'Total Books', value: booksData.books.length.toString(), icon: Book, color: 'bg-blue-500', change: '+12%' },
-                { id: 2, title: 'Total Users', value: usersData.users.length.toString(), icon: Users, color: 'bg-green-500', change: '+8%' },
-                { id: 3, title: 'Pending Reviews', value: reviewsData.reviews.length.toString(), icon: MessageSquare, color: 'bg-yellow-500', change: `+${reviewsData.reviews.length}` }, // UPDATED
-                { id: 4, title: 'Total Genres', value: genresData.genres.length.toString(), icon: Tag, color: 'bg-purple-500', change: '+2' },
+                { id: 1, title: 'Total Books', value: adminData.totalBooks.toString(), icon: Book, color: 'bg-blue-500', change: '+12%' },
+                { id: 2, title: 'Total Users', value: adminData.totalUsers.toString(), icon: Users, color: 'bg-green-500', change: '+8%' },
+                { id: 3, title: 'Pending Reviews', value: reviewsData.reviews.length.toString(), icon: MessageSquare, color: 'bg-yellow-500', change: `+${reviewsData.reviews.length}` },
+                { id: 4, title: 'Total Genres', value: adminData.booksPerGenre.length.toString(), icon: Tag, color: 'bg-purple-500', change: '+2' },
             ]);
+
+            setBooksPerGenre(adminData.booksPerGenre);
         } catch (error) {
             console.error('Failed to fetch stats:', error);
         }
@@ -42,7 +44,7 @@ const AdminDashboard = () => {
         { id: 2, title: 'Manage Genres', icon: Tag, link: '/admin/genres', color: 'bg-secondary' },
         { id: 3, title: 'Moderate Reviews', icon: MessageSquare, link: '/admin/reviews', color: 'bg-secondary' },
         { id: 4, title: 'Manage Users', icon: Users, link: '/admin/users', color: 'bg-secondary' },
-        { id: 5, title: 'Manage Tutorials', icon: Youtube, link: '/admin/tutorials', color: 'bg-secondary' }, // NEW LINE
+        { id: 5, title: 'Manage Tutorials', icon: Youtube, link: '/admin/tutorials', color: 'bg-secondary' },
     ];
 
     return (
@@ -72,10 +74,37 @@ const AdminDashboard = () => {
                 ))}
             </div>
 
+            {/* Charts Section */}
+            {booksPerGenre.length > 0 && (
+                <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+                    <h2 className="text-2xl font-bold text-secondary mb-6">Books Distribution by Genre</h2>
+                    <ResponsiveContainer width="100%" height={400}>
+                        <PieChart>
+                            <Pie
+                                data={booksPerGenre}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                outerRadius={120}
+                                fill="#8884d8"
+                                dataKey="value"
+                            >
+                                {booksPerGenre.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+            )}
+
             {/* Quick Actions */}
             <div className="mb-8">
                 <h2 className="text-2xl font-bold text-secondary mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     {quickActions.map((action) => (
                         <button
                             key={action.id}

@@ -1,6 +1,8 @@
 import Book from "../models/bookModel.js";
 import Shelf from "../models/shelfModel.js";
 import Review from "../models/reviewModel.js";
+import Genre from "../models/genreModel.js";
+import User from "../models/userModel.js";
 
 // CREATE BOOK (Admin only)
 export const createBook = async (req, res) => {
@@ -228,6 +230,53 @@ export const getRecommendations = async (req, res) => {
         res.status(200).json({ recommendations });
     } catch (error) {
         console.error("Get Recommendations Error:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+// GET ADMIN STATS
+export const getAdminStats = async (req, res) => {
+    try {
+        // TOTAL BOOKS COUNT
+        const totalBooks = await Book.countDocuments();
+
+        // TOTAL USERS COUNT
+        const totalUsers = await User.countDocuments();
+
+        // BOOKS PER GENRE
+        const booksPerGenre = await Book.aggregate([
+            {
+                $group: {
+                    _id: "$genre",
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $lookup: {
+                    from: "genres",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "genreInfo"
+                }
+            },
+            {
+                $unwind: "$genreInfo"
+            },
+            {
+                $project: {
+                    name: "$genreInfo.name",
+                    value: "$count"
+                }
+            }
+        ]);
+
+        res.status(200).json({
+            totalBooks,
+            totalUsers,
+            booksPerGenre
+        });
+    } catch (error) {
+        console.error("Get Admin Stats Error:", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };

@@ -37,3 +37,8 @@ export const getRecommendations = async () => {
     const response = await API.get("/api/books/recommendations");
     return response.data;
 };
+
+export const getAdminStats = async () => {
+    const response = await API.get("/api/books/admin-stats");
+    return response.data;
+};
