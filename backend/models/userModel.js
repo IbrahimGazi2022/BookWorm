@@ -32,6 +32,17 @@ const userSchema = new mongoose.Schema(
       enum: ["User", "Admin"],
       default: "User"
     },
+    readingGoal: {
+      year: {
+        type: Number,
+        default: () => new Date().getFullYear()
+      },
+      target: {
+        type: Number,
+        default: 0,
+        min: 0
+      }
+    }
   },
 
   {

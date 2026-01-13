@@ -138,3 +138,56 @@ export const updateUserRole = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+
+// GET READING GOAL (USER)
+export const getReadingGoal = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const user = await User.findById(userId).select("readingGoal");
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ readingGoal: user.readingGoal });
+    } catch (error) {
+        console.error("Get Reading Goal Error:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+// SET/UPDATE READING GOAL (USER)
+export const setReadingGoal = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { year, target } = req.body;
+
+        if (!year || !target || target < 0) {
+            return res.status(400).json({ message: "Valid year and target are required" });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            userId,
+            {
+                readingGoal: {
+                    year,
+                    target
+                }
+            },
+            { new: true }
+        ).select("readingGoal");
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({
+            message: "Reading goal updated successfully",
+            readingGoal: user.readingGoal
+        });
+    } catch (error) {
+        console.error("Set Reading Goal Error:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
