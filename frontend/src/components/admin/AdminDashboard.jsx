@@ -39,14 +39,6 @@ const AdminDashboard = () => {
         }
     };
 
-    const quickActions = [
-        { id: 1, title: 'Add New Book', icon: Plus, link: '/admin/books', color: 'bg-secondary' },
-        { id: 2, title: 'Manage Genres', icon: Tag, link: '/admin/genres', color: 'bg-secondary' },
-        { id: 3, title: 'Moderate Reviews', icon: MessageSquare, link: '/admin/reviews', color: 'bg-secondary' },
-        { id: 4, title: 'Manage Users', icon: Users, link: '/admin/users', color: 'bg-secondary' },
-        { id: 5, title: 'Manage Tutorials', icon: Youtube, link: '/admin/tutorials', color: 'bg-secondary' },
-    ];
-
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             {/* Header */}
@@ -100,23 +92,6 @@ const AdminDashboard = () => {
                     </ResponsiveContainer>
                 </div>
             )}
-
-            {/* Quick Actions */}
-            <div className="mb-8">
-                <h2 className="text-2xl font-bold text-secondary mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                    {quickActions.map((action) => (
-                        <button
-                            key={action.id}
-                            onClick={() => navigate(action.link)}
-                            className={`${action.color} text-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 flex flex-col items-center justify-center gap-3`}
-                        >
-                            <action.icon className="w-8 h-8" />
-                            <span className="font-semibold">{action.title}</span>
-                        </button>
-                    ))}
-                </div>
-            </div>
         </div>
     );
 };
