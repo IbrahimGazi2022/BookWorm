@@ -1,4 +1,4 @@
-import { Loader, Mail, Lock, ArrowRight } from "lucide-react";
+import { Loader, Mail, Lock, ArrowRight, UserCheck, ShieldCheck } from "lucide-react";
 import React, { useState } from "react";
 import "react-toastify/dist/ReactToastify.css";
 import { Link, useNavigate } from "react-router-dom";
@@ -26,6 +26,23 @@ const Login = () => {
         });
     };
 
+    // --- QUICK LOGIN HANDLERS ---
+    const fillDemoAdmin = () => {
+        setFormData({
+            email: "admin@admin.com",
+            password: "123456",
+        });
+        toast.info("Admin credentials filled!");
+    };
+
+    const fillDemoUser = () => {
+        setFormData({
+            email: "mh.ibrahimgazi@gmail.com",
+            password: "123456",
+        });
+        toast.info("User credentials filled!");
+    };
+
     // --- HANDLE SUBMIT ---
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -48,7 +65,6 @@ const Login = () => {
             // ROLE-BASED REDIRECT WITH REFRESH
             setTimeout(() => {
                 const targetPath = data.user.role === "Admin" ? "/admin/dashboard" : "/my-library";
-                // সরাসরি উইন্ডো লোকেশন চেঞ্জ করে রিফ্রেশসহ রিডাইরেক্ট করা হলো
                 window.location.href = targetPath;
             }, 1000);
 
@@ -75,7 +91,6 @@ const Login = () => {
                             Enter your credentials to access your library
                         </p>
                     </div>
-                    {/* Decorative Circles */}
                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
                     <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-black/10 rounded-full blur-2xl"></div>
                 </div>
@@ -150,8 +165,28 @@ const Login = () => {
                             )}
                         </button>
 
+                        {/* --- DEMO LOGIN QUICK ACCESS --- */}
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={fillDemoAdmin}
+                                className="bg-gray-50 text-gray-600 py-3 rounded-xl border border-dashed border-gray-300 hover:bg-gray-100 hover:border-secondary/30 transition-all font-bold text-[12px] uppercase tracking-tighter flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <ShieldCheck className="w-3.5 h-3.5 text-secondary font-bold" />
+                                Admin Demo
+                            </button>
+                            <button
+                                type="button"
+                                onClick={fillDemoUser}
+                                className="bg-gray-50 text-gray-600 py-3 rounded-xl border border-dashed border-gray-300 hover:bg-gray-100 hover:border-secondary/30 transition-all font-bold text-[12px] uppercase tracking-tighter flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <UserCheck className="w-3.5 h-3.5 text-secondary font-bold" />
+                                User Demo
+                            </button>
+                        </div>
+
                         {/* --- REGISTER LINK --- */}
-                        <div className="text-center pt-4">
+                        <div className="text-center pt-2">
                             <p className="text-xs md:text-sm text-gray-500 font-medium">
                                 New to our library?{" "}
                                 <Link
