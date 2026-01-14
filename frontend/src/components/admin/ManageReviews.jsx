@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { MessageSquare, CheckCircle, XCircle, Star, Loader } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import { getPendingReviews, approveReview, deleteReview } from "../../services/reviewService";
+import { setPendingReviews } from "../../redux/slices/adminSlice";
 
 // --- STAR RATING COMPONENT ---
 const StarRating = ({ rating }) => (
@@ -33,7 +35,7 @@ const ReviewCard = ({ review, onApprove, onDelete, actionLoading }) => {
                         }
                         alt={review.book.title}
                         className="w-24 h-32 md:w-28 md:h-40 object-cover rounded-xl shadow-sm"
-                    />  
+                    />
                 </div>
 
                 {/* CONTENT SECTION */}
@@ -100,19 +102,22 @@ const ReviewCard = ({ review, onApprove, onDelete, actionLoading }) => {
 
 // --- MAIN MANAGE REVIEWS COMPONENT ---
 const ManageReviews = () => {
-    const [reviews, setReviews] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const dispatch = useDispatch();
+    const reviews = useSelector((state) => state.admin.pendingReviews);
+    const [loading, setLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(null);
 
     useEffect(() => {
-        fetchReviews();
+        if (reviews.length === 0) {
+            fetchReviews();
+        }
     }, []);
 
     const fetchReviews = async () => {
         try {
             setLoading(true);
             const data = await getPendingReviews();
-            setReviews(data.reviews);
+            dispatch(setPendingReviews(data.reviews));
         } catch (error) {
             toast.error("Failed to fetch reviews");
         } finally {
@@ -173,7 +178,7 @@ const ManageReviews = () => {
                 </div>
 
                 {/* CONTENT AREA */}
-                {loading ? (
+                {loading && reviews.length === 0 ? (
                     <div className="flex flex-col justify-center items-center h-64 gap-4">
                         <Loader className="w-10 h-10 animate-spin text-secondary" />
                         <p className="text-gray-400 font-medium animate-pulse">Loading pending reviews...</p>
