@@ -89,7 +89,7 @@ const Register = () => {
                     </div>
                     <div className="relative z-10 flex items-center gap-2 text-xs font-bold tracking-widest uppercase opacity-50">
                         <div className="w-8 h-px bg-white"></div>
-                        Est. 2024
+                        Est. 2026
                     </div>
                     <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
                 </div>
