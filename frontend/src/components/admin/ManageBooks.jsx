@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import { Plus, Edit2, Trash2, Loader, Upload, X } from "lucide-react";
 import { createBook, getAllBooks, updateBook, deleteBook } from "../../services/bookService";
 import { getAllGenres } from "../../services/genreService";
+import { setAllBooks, setAllGenres } from "../../redux/slices/bookSlice";
 
 // --- FORM COMPONENTS ---
 const ImageUpload = ({ preview, onUpload, onRemove }) => (
@@ -78,8 +80,9 @@ const BookCard = ({ book, onEdit, onDelete }) => (
 
 // --- MAIN MANAGE BOOKS COMPONENT ---
 const ManageBooks = () => {
-    const [books, setBooks] = useState([]);
-    const [genres, setGenres] = useState([]);
+    const dispatch = useDispatch();
+    const { allBooks, allGenres } = useSelector((state) => state.books);
+
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -88,15 +91,15 @@ const ManageBooks = () => {
     const [formData, setFormData] = useState({ title: "", author: "", genre: "", description: "" });
 
     useEffect(() => {
-        fetchBooks();
-        fetchGenres();
-    }, []);
+        if (allBooks.length === 0) fetchBooks();
+        if (allGenres.length === 0) fetchGenres();
+    }, [allBooks.length, allGenres.length]);
 
     const fetchBooks = async () => {
         try {
             setLoading(true);
             const data = await getAllBooks();
-            setBooks(data.books);
+            dispatch(setAllBooks(data.books));
         } catch (error) {
             toast.error("Failed to fetch books");
         } finally {
@@ -107,7 +110,7 @@ const ManageBooks = () => {
     const fetchGenres = async () => {
         try {
             const data = await getAllGenres();
-            setGenres(data.genres);
+            dispatch(setAllGenres(data.genres));
         } catch (error) {
             toast.error("Failed to fetch genres");
         }
@@ -180,7 +183,6 @@ const ManageBooks = () => {
             <ToastContainer position="top-right" autoClose={3000} />
 
             <div className="max-w-6xl mx-auto">
-                {/* --- HEADER SECTION --- */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Manage Books</h1>
@@ -195,7 +197,6 @@ const ManageBooks = () => {
                     </button>
                 </div>
 
-                {/* --- FORM SECTION --- */}
                 {showForm && (
                     <div className="bg-white p-5 md:p-8 rounded-2xl shadow-lg mb-10 border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-300">
                         <h2 className="text-xl font-bold mb-6 text-secondary">{editingId ? "Edit Book Details" : "New Book Information"}</h2>
@@ -217,7 +218,7 @@ const ManageBooks = () => {
                                 <label className="text-sm font-semibold text-gray-700 ml-1">Genre *</label>
                                 <select name="genre" value={formData.genre} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all bg-gray-50">
                                     <option value="">Select a category</option>
-                                    {genres.map(genre => <option key={genre._id} value={genre._id}>{genre.name}</option>)}
+                                    {allGenres.map(genre => <option key={genre._id} value={genre._id}>{genre.name}</option>)}
                                 </select>
                             </div>
 
@@ -236,22 +237,20 @@ const ManageBooks = () => {
                     </div>
                 )}
 
-                {/* --- LIST SECTION --- */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="p-6 border-b border-gray-50 bg-white">
                         <h2 className="text-xl font-bold text-gray-800">Library Collection</h2>
                     </div>
 
-                    {loading && !books.length ? (
+                    {loading && !allBooks.length ? (
                         <div className="flex justify-center items-center p-20"><Loader className="w-10 h-10 animate-spin text-secondary" /></div>
-                    ) : books.length === 0 ? (
+                    ) : allBooks.length === 0 ? (
                         <div className="text-center py-20 px-4">
                             <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><Plus className="text-gray-300" /></div>
                             <p className="text-gray-500 font-medium">No books available in the database.</p>
                         </div>
                     ) : (
                         <>
-                            {/* --- DESKTOP TABLE --- */}
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-left">
                                     <thead className="bg-gray-50/50 text-gray-500 text-sm uppercase">
@@ -264,14 +263,13 @@ const ManageBooks = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
-                                        {books.map(book => <BookRow key={book._id} book={book} onEdit={handleEdit} onDelete={handleDelete} />)}
+                                        {allBooks.map(book => <BookRow key={book._id} book={book} onEdit={handleEdit} onDelete={handleDelete} />)}
                                     </tbody>
                                 </table>
                             </div>
 
-                            {/* --- MOBILE CARDS --- */}
                             <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
-                                {books.map(book => <BookCard key={book._id} book={book} onEdit={handleEdit} onDelete={handleDelete} />)}
+                                {allBooks.map(book => <BookCard key={book._id} book={book} onEdit={handleEdit} onDelete={handleDelete} />)}
                             </div>
                         </>
                     )}

@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { Book, BookOpen, CheckCircle, Loader, Trash2, Plus, ArrowRight } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import { getUserShelves, removeFromShelf, updateProgress } from "../../services/shelfService";
+import { setShelves, updateBookProgress, removeFromReduxShelf } from "../../redux/slices/shelfSlice";
 
 const MyLibrary = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const shelves = useSelector((state) => state.shelf.shelves);
     const [activeShelf, setActiveShelf] = useState("wantToRead");
-    const [shelves, setShelves] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [editingProgress, setEditingProgress] = useState({});
 
     const shelfConfig = [
@@ -17,13 +20,17 @@ const MyLibrary = () => {
         { id: "read", name: "Completed", icon: CheckCircle, color: "bg-emerald-500", light: "bg-emerald-50", text: "text-emerald-600" },
     ];
 
-    useEffect(() => { fetchShelves(); }, []);
+    useEffect(() => {
+        if (shelves.length === 0) {
+            fetchShelves();
+        }
+    }, []);
 
     const fetchShelves = async () => {
         try {
             setLoading(true);
             const data = await getUserShelves();
-            setShelves(data.shelves);
+            dispatch(setShelves(data.shelves));
         } catch (error) {
             toast.error("Failed to fetch shelves");
         } finally {
@@ -35,16 +42,16 @@ const MyLibrary = () => {
         if (!window.confirm("Remove this masterpiece from your shelf?")) return;
         try {
             await removeFromShelf(shelfId);
+            dispatch(removeFromReduxShelf(shelfId));
             toast.success("Shelf updated");
-            fetchShelves();
         } catch (error) { toast.error("Failed to remove book"); }
     };
 
     const handleProgressUpdate = async (shelfId, pagesRead, totalPages) => {
         try {
             await updateProgress(shelfId, { pagesRead, totalPages });
+            dispatch(updateBookProgress({ shelfId, pagesRead, totalPages }));
             toast.success("Great progress!");
-            fetchShelves();
             setEditingProgress({});
         } catch (error) { toast.error("Failed to update progress"); }
     };
@@ -63,10 +70,9 @@ const MyLibrary = () => {
             <ToastContainer position="top-right" autoClose={2000} hideProgressBar />
 
             <div className="max-w-7xl mx-auto">
-                {/* HEADER */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 md:mb-12">
                     <div>
-                        <h1 className="text-3xl md:text-5xl font-black text-gray-800 tracking-tight">My <span className="text-secondary">Library</span></h1>
+                        <h1 className="text-3xl md:text-5xl font-black text-gray-800 tracking-wide">My <span className="text-secondary">Library</span></h1>
                         <p className="text-gray-400 font-bold text-sm md:text-lg mt-1">Tracking your literary journey</p>
                     </div>
                     <button onClick={() => navigate("/browse")} className="flex items-center justify-center gap-2 bg-secondary text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-xl shadow-secondary/20 hover:scale-105 transition-all">
@@ -74,7 +80,6 @@ const MyLibrary = () => {
                     </button>
                 </div>
 
-                {/* SHELF TABS (Scrollable on Mobile) */}
                 <div className="flex overflow-x-auto no-scrollbar gap-2 mb-8 bg-white p-2 rounded-3xl shadow-sm border border-gray-100">
                     {shelfConfig.map((shelf) => {
                         const count = shelves.filter(s => s.shelfType === shelf.id).length;
@@ -96,7 +101,6 @@ const MyLibrary = () => {
                     })}
                 </div>
 
-                {/* CONTENT AREA */}
                 {loading ? (
                     <div className="flex flex-col justify-center items-center py-24 gap-4">
                         <Loader className="w-10 h-10 animate-spin text-secondary" />
@@ -125,7 +129,6 @@ const MyLibrary = () => {
 
                             return (
                                 <div key={shelf._id} className="bg-white rounded-[2.5rem] shadow-sm border border-gray-50 overflow-hidden flex flex-col group hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-500">
-                                    {/* BOOK COVER */}
                                     <div onClick={() => navigate(`/books/${shelf.book._id}`)} className="relative aspect-4/5 overflow-hidden cursor-pointer">
                                         <img src={shelf.book.coverImage} alt={shelf.book.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-60" />
@@ -135,7 +138,6 @@ const MyLibrary = () => {
                                         </div>
                                     </div>
 
-                                    {/* PROGRESS & ACTIONS */}
                                     <div className="p-6 flex-1 flex flex-col justify-between space-y-6">
                                         {shelf.shelfType === "currentlyReading" ? (
                                             <div className="space-y-4">

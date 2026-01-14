@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { X, LayoutDashboard, BookOpen, Library, Youtube, Book, Tag, Users, MessageSquare } from "lucide-react";
 
-// --- MENU CONFIGURATIONS ---
 const USER_MENU_ITEMS = [
     { id: 1, name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
     { id: 2, name: "My Library", icon: Library, path: "/my-library" },
@@ -19,7 +19,6 @@ const ADMIN_MENU_ITEMS = [
     { id: 6, name: "Manage Tutorials", icon: Youtube, path: "/admin/tutorials" },
 ];
 
-// --- MOBILE OVERLAY COMPONENT ---
 const MobileOverlay = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
     return (
@@ -30,7 +29,6 @@ const MobileOverlay = ({ isOpen, onClose }) => {
     );
 };
 
-// --- MENU ITEM COMPONENT ---
 const NavItem = ({ item, isActive, onClick }) => {
     const Icon = item.icon;
     return (
@@ -46,11 +44,11 @@ const NavItem = ({ item, isActive, onClick }) => {
     );
 };
 
-// --- MAIN SIDEBAR COMPONENT ---
 const Sidebar = ({ isOpen, setIsOpen }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const user = JSON.parse(localStorage.getItem("user"));
+
+    const user = useSelector((state) => state.user.user);
 
     const menuItems = user?.role === "Admin" ? ADMIN_MENU_ITEMS : USER_MENU_ITEMS;
 
@@ -65,8 +63,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
             <aside className={`bg-white shadow-xl fixed left-0 top-0 bottom-0 w-64 z-50 transition-transform duration-300 ease-in-out
                 ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:top-16 lg:z-30`}>
-                    
-                {/* --- MOBILE HEADER SECTION --- */}
+
                 <div className="flex items-center justify-between p-5 lg:hidden border-b">
                     <span className="font-bold text-secondary text-xl">Menu</span>
                     <button onClick={() => setIsOpen(false)} className="cursor-pointer">
@@ -74,7 +71,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     </button>
                 </div>
 
-                {/* --- NAVIGATION SECTION --- */}
                 <nav className="p-4 lg:mt-4">
                     <ul className="space-y-1">
                         {menuItems.map((item) => (

@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { Upload, X, Loader, Camera, User, Mail, Lock } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { registerUser } from "../../services/authService";
+import { setUser } from "../../redux/slices/userSlice";
 
 const Register = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
@@ -56,9 +59,16 @@ const Register = () => {
 
         try {
             setLoading(true);
-            await registerUser(data);
+            const response = await registerUser(data);
+
+            if (response.token && response.user) {
+                localStorage.setItem("token", response.token);
+                localStorage.setItem("user", JSON.stringify(response.user));
+                dispatch(setUser(response.user));
+            }
+
             toast.success("Account created! Redirecting...");
-            setTimeout(() => navigate("/"), 1500);
+            setTimeout(() => navigate("/my-library"), 1500);
         } catch (error) {
             toast.error(error.response?.data?.message || "Registration failed");
         } finally {
@@ -72,7 +82,6 @@ const Register = () => {
 
             <div className="w-full max-w-2xl bg-white rounded-4xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-500">
 
-                {/* LEFT SIDE: DECORATIVE/INFO (HIDDEN ON MOBILE) */}
                 <div className="hidden md:flex w-1/3 bg-secondary p-8 text-white flex-col justify-between relative overflow-hidden">
                     <div className="relative z-10">
                         <h2 className="text-3xl font-extrabold leading-tight mb-4">Join Our Library</h2>
@@ -82,11 +91,9 @@ const Register = () => {
                         <div className="w-8 h-px bg-white"></div>
                         Est. 2024
                     </div>
-                    {/* Abstract Shapes */}
                     <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
                 </div>
 
-                {/* RIGHT SIDE: FORM */}
                 <div className="flex-1 p-6 md:p-10">
                     <div className="text-center md:text-left mb-8">
                         <h2 className="text-2xl md:text-3xl font-black text-gray-800 md:hidden mb-2">Create Account</h2>
@@ -94,7 +101,6 @@ const Register = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* PROFILE PHOTO UPLOAD */}
                         <div className="flex flex-col items-center md:items-start mb-6">
                             <div className="relative group">
                                 {imagePreview ? (
@@ -114,7 +120,6 @@ const Register = () => {
                             </div>
                         </div>
 
-                        {/* NAME GRID */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-gray-700 ml-1 italic">First Name</label>
@@ -129,7 +134,6 @@ const Register = () => {
                             </div>
                         </div>
 
-                        {/* EMAIL */}
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold text-gray-700 ml-1 italic">Email Address</label>
                             <div className="relative">
@@ -138,7 +142,6 @@ const Register = () => {
                             </div>
                         </div>
 
-                        {/* PASSWORDS GRID */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-gray-700 ml-1 italic">Password</label>
@@ -153,7 +156,6 @@ const Register = () => {
                             </div>
                         </div>
 
-                        {/* SUBMIT */}
                         <button type="submit" disabled={loading} className="w-full bg-secondary text-white py-4 rounded-2xl font-bold text-sm uppercase tracking-widest shadow-xl shadow-secondary/20 hover:shadow-secondary/40 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 mt-4 cursor-pointer">
                             {loading ? <Loader className="w-5 h-5 animate-spin" /> : "Create Account"}
                         </button>

@@ -27,10 +27,13 @@ const ReviewCard = ({ review, onApprove, onDelete, actionLoading }) => {
                 {/* BOOK COVER SECTION */}
                 <div className="relative shrink-0 flex justify-center sm:block">
                     <img
-                        src={`${import.meta.env.VITE_API_URL}/${review.book.coverImage}`}
+                        src={review.book.coverImage.startsWith('http')
+                            ? review.book.coverImage
+                            : `${import.meta.env.VITE_API_URL}/${review.book.coverImage}`
+                        }
                         alt={review.book.title}
                         className="w-24 h-32 md:w-28 md:h-40 object-cover rounded-xl shadow-sm"
-                    />
+                    />  
                 </div>
 
                 {/* CONTENT SECTION */}

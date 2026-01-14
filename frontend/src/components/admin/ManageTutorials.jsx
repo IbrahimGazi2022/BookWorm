@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux"; 
 import { Youtube, Plus, Edit2, Trash2, Loader, X } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import {
@@ -7,6 +8,7 @@ import {
     updateTutorial,
     deleteTutorial,
 } from "../../services/tutorialService";
+import { setAllTutorials } from "../../redux/slices/bookSlice"; 
 
 // --- SUB-COMPONENTS ---
 
@@ -16,7 +18,6 @@ const TutorialCard = ({ tutorial, onEdit, onDelete, extractVideoId }) => {
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 group">
-
             {/* THUMBNAIL SECTION */}
             <div className="relative aspect-video bg-gray-100">
                 {videoId ? (
@@ -74,7 +75,6 @@ const TutorialModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isEdi
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-100 p-4 animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
                 <div className="p-6">
-                    {/* MODAL HEADER */}
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-xl md:text-2xl font-bold text-gray-800">
                             {isEditing ? "Edit Tutorial" : "Add New Tutorial"}
@@ -84,7 +84,6 @@ const TutorialModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isEdi
                         </button>
                     </div>
 
-                    {/* FORM */}
                     <form onSubmit={onSubmit} className="space-y-4">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1.5 ml-1">Title *</label>
@@ -129,7 +128,6 @@ const TutorialModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isEdi
                             />
                         </div>
 
-                        {/* SUBMIT BUTTONS */}
                         <div className="flex gap-3 mt-8">
                             <button
                                 type="submit"
@@ -155,22 +153,32 @@ const TutorialModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isEdi
 
 // --- MAIN COMPONENT ---
 const ManageTutorials = () => {
-    const [tutorials, setTutorials] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const dispatch = useDispatch();
+    const { allTutorials } = useSelector((state) => state.books); // Getting from Redux
+    
+    const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [editingTutorial, setEditingTutorial] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({ title: "", youtubeUrl: "", description: "", order: 0 });
 
-    useEffect(() => { fetchTutorials(); }, []);
+    useEffect(() => { 
+        // Only fetch if Redux is empty to enable caching
+        if (allTutorials.length === 0) {
+            fetchTutorials(); 
+        }
+    }, [allTutorials.length]);
 
     const fetchTutorials = async () => {
         try {
             setLoading(true);
             const data = await getAllTutorials();
-            setTutorials(data.tutorials);
-        } catch (error) { toast.error("Failed to fetch tutorials"); }
-        finally { setLoading(false); }
+            dispatch(setAllTutorials(data.tutorials)); // Saving to Redux
+        } catch (error) { 
+            toast.error("Failed to fetch tutorials"); 
+        } finally { 
+            setLoading(false); 
+        }
     };
 
     const handleOpenModal = (tutorial = null) => {
@@ -199,9 +207,12 @@ const ManageTutorials = () => {
             editingTutorial ? await updateTutorial(editingTutorial._id, formData) : await createTutorial(formData);
             toast.success(`Tutorial ${editingTutorial ? "updated" : "created"} successfully`);
             handleCloseModal();
-            fetchTutorials();
-        } catch (error) { toast.error("Failed to save tutorial"); }
-        finally { setSubmitting(false); }
+            fetchTutorials(); // Syncing Redux after change
+        } catch (error) { 
+            toast.error("Failed to save tutorial"); 
+        } finally { 
+            setSubmitting(false); 
+        }
     };
 
     const handleDelete = async (id) => {
@@ -209,8 +220,10 @@ const ManageTutorials = () => {
         try {
             await deleteTutorial(id);
             toast.success("Tutorial deleted");
-            fetchTutorials();
-        } catch (error) { toast.error("Delete failed"); }
+            fetchTutorials(); // Syncing Redux after delete
+        } catch (error) { 
+            toast.error("Delete failed"); 
+        }
     };
 
     const extractVideoId = (url) => {
@@ -244,14 +257,14 @@ const ManageTutorials = () => {
             </div>
 
             {/* CONTENT AREA */}
-            {loading ? (
+            {loading && !allTutorials.length ? (
                 <div className="flex flex-col justify-center items-center h-64 gap-4">
                     <Loader className="w-10 h-10 animate-spin text-secondary" />
                     <p className="text-gray-400 font-medium animate-pulse text-sm">Fetching tutorials...</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-                    {tutorials.map((tutorial) => (
+                    {allTutorials.map((tutorial) => (
                         <TutorialCard
                             key={tutorial._id}
                             tutorial={tutorial}
@@ -261,7 +274,7 @@ const ManageTutorials = () => {
                         />
                     ))}
 
-                    {tutorials.length === 0 && (
+                    {allTutorials.length === 0 && (
                         <div className="col-span-full text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
                             <Youtube className="w-16 h-16 text-gray-200 mx-auto mb-4" />
                             <p className="text-gray-500 font-medium">No video tutorials available.</p>

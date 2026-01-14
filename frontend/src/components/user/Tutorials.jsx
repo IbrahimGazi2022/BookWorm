@@ -1,21 +1,27 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { Youtube, Loader, PlayCircle, Info, Clock } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import { getAllTutorials } from "../../services/tutorialService";
+import { setAllTutorials } from "../../redux/slices/bookSlice";
 
 const Tutorials = () => {
-    const [tutorials, setTutorials] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const dispatch = useDispatch();
+    const tutorials = useSelector((state) => state.books.allTutorials);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        fetchTutorials();
+        if (tutorials.length === 0) {
+            fetchTutorials();
+        }
     }, []);
 
     const fetchTutorials = async () => {
         try {
             setLoading(true);
             const data = await getAllTutorials();
-            setTutorials(data.tutorials);
+            dispatch(setAllTutorials(data.tutorials));
         } catch (error) {
             toast.error("Failed to fetch tutorials");
         } finally {
@@ -29,7 +35,7 @@ const Tutorials = () => {
         return match ? match[1] : null;
     };
 
-    if (loading) {
+    if (loading && tutorials.length === 0) {
         return (
             <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 gap-4">
                 <div className="relative">
@@ -45,7 +51,6 @@ const Tutorials = () => {
         <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 lg:p-12">
             <ToastContainer position="top-right" autoClose={2000} hideProgressBar />
 
-            {/* HEADER */}
             <div className="max-w-7xl mx-auto mb-10 md:mb-16">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="space-y-2">
@@ -53,7 +58,7 @@ const Tutorials = () => {
                             <div className="bg-secondary p-2 rounded-xl shadow-lg shadow-secondary/20">
                                 <Youtube className="w-6 h-6 md:w-8 md:h-8 text-white" />
                             </div>
-                            <h1 className="text-3xl md:text-5xl font-black text-gray-800 tracking-tight">
+                            <h1 className="text-3xl md:text-5xl font-black text-gray-800 tracking-wide">
                                 Book <span className="text-secondary">Tutorials</span>
                             </h1>
                         </div>
@@ -73,7 +78,6 @@ const Tutorials = () => {
                 </div>
             </div>
 
-            {/* TUTORIALS GRID */}
             <div className="max-w-7xl mx-auto">
                 {tutorials.length === 0 ? (
                     <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed border-gray-200 shadow-sm">
@@ -90,7 +94,6 @@ const Tutorials = () => {
                                     key={tutorial._id}
                                     className="group bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-2xl hover:shadow-secondary/10 transition-all duration-500"
                                 >
-                                    {/* VIDEO EMBED CONTAINER */}
                                     <div className="relative aspect-video overflow-hidden">
                                         {videoId ? (
                                             <iframe
@@ -107,11 +110,9 @@ const Tutorials = () => {
                                                 <p className="text-[10px] font-black text-gray-400 uppercase">Video Unavailable</p>
                                             </div>
                                         )}
-                                        {/* Play Overlay (Visible before interaction) */}
                                         <div className="absolute inset-0 bg-secondary/10 pointer-events-none group-hover:bg-transparent transition-colors duration-500" />
                                     </div>
 
-                                    {/* VIDEO INFO */}
                                     <div className="p-6 md:p-8 flex-1 flex flex-col">
                                         <div className="flex items-center gap-2 mb-3">
                                             <span className="bg-secondary/10 text-secondary text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">

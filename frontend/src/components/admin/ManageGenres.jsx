@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import { Plus, Edit2, Trash2, Loader, X } from "lucide-react";
 import { createGenre, getAllGenres, updateGenre, deleteGenre } from "../../services/genreService";
+import { setAllGenres } from "../../redux/slices/bookSlice";
 
 // --- FORM COMPONENT ---
 const GenreForm = ({ formData, setFormData, handleSubmit, loading, editingId, onCancel }) => (
@@ -23,8 +25,7 @@ const GenreForm = ({ formData, setFormData, handleSubmit, loading, editingId, on
                     disabled={loading}
                     className="flex-1 sm:flex-none bg-secondary text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
                 >
-                    {loading ? (<Loader className="w-5 h-5 animate-spin" />
-                    ) : (
+                    {loading ? <Loader className="w-5 h-5 animate-spin" /> : (
                         <>
                             {editingId ? <Edit2 className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
                             {editingId ? "Update" : "Add"}
@@ -32,11 +33,7 @@ const GenreForm = ({ formData, setFormData, handleSubmit, loading, editingId, on
                     )}
                 </button>
                 {editingId && (
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="bg-gray-100 text-gray-600 px-4 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all cursor-pointer"
-                    >
+                    <button type="button" onClick={onCancel} className="bg-gray-100 text-gray-600 px-4 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all cursor-pointer">
                         <X className="w-5 h-5" />
                     </button>
                 )}
@@ -56,18 +53,10 @@ const GenreListItem = ({ genre, onEdit, onDelete }) => (
         </td>
         <td className="p-4 text-right">
             <div className="flex justify-end gap-2 md:gap-4">
-                <button
-                    onClick={() => onEdit(genre)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                    title="Edit Genre"
-                >
+                <button onClick={() => onEdit(genre)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
                     <Edit2 className="w-5 h-5" />
                 </button>
-                <button
-                    onClick={() => onDelete(genre._id)}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                    title="Delete Genre"
-                >
+                <button onClick={() => onDelete(genre._id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all">
                     <Trash2 className="w-5 h-5" />
                 </button>
             </div>
@@ -77,20 +66,24 @@ const GenreListItem = ({ genre, onEdit, onDelete }) => (
 
 // --- MAIN MANAGE GENRES COMPONENT ---
 const ManageGenres = () => {
-    const [genres, setGenres] = useState([]);
+    const dispatch = useDispatch();
+    const { allGenres } = useSelector((state) => state.books);
+
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({ name: "" });
     const [editingId, setEditingId] = useState(null);
 
     useEffect(() => {
-        fetchGenres();
-    }, []);
+        if (allGenres.length === 0) {
+            fetchGenres();
+        }
+    }, [allGenres.length]);
 
     const fetchGenres = async () => {
         try {
             setLoading(true);
             const data = await getAllGenres();
-            setGenres(data.genres);
+            dispatch(setAllGenres(data.genres));
         } catch (error) {
             toast.error("Failed to fetch genres");
         } finally {
@@ -145,15 +138,12 @@ const ManageGenres = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
             <ToastContainer position="top-right" autoClose={2000} hideProgressBar />
-
             <div className="max-w-3xl mx-auto">
-                {/* HEADER SECTION */}
                 <div className="mb-8">
                     <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Manage Genres</h1>
                     <p className="text-gray-500 text-sm md:text-base">Organize and categorize your book collection</p>
                 </div>
 
-                {/* ADD/EDIT FORM SECTION */}
                 <GenreForm
                     formData={formData}
                     setFormData={setFormData}
@@ -163,20 +153,19 @@ const ManageGenres = () => {
                     onCancel={handleCancel}
                 />
 
-                {/* GENRES LIST SECTION */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
                         <h2 className="text-lg font-bold text-gray-800">Available Categories</h2>
                         <span className="bg-gray-100 text-gray-500 text-xs font-bold px-2.5 py-1 rounded-full">
-                            {genres.length} Total
+                            {allGenres.length} Total
                         </span>
                     </div>
 
-                    {loading && !genres.length ? (
+                    {loading && !allGenres.length ? (
                         <div className="flex justify-center items-center p-16">
                             <Loader className="w-8 h-8 animate-spin text-secondary" />
                         </div>
-                    ) : genres.length === 0 ? (
+                    ) : allGenres.length === 0 ? (
                         <div className="text-center py-16 px-4">
                             <div className="bg-gray-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
                                 <Plus className="text-gray-300" />
@@ -193,7 +182,7 @@ const ManageGenres = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
-                                    {genres.map((genre) => (
+                                    {allGenres.map((genre) => (
                                         <GenreListItem
                                             key={genre._id}
                                             genre={genre}

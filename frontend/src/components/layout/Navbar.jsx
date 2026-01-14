@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { LogOut, Menu } from "lucide-react";
 import { toast } from "react-toastify";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "../../redux/slices/userSlice";
 
 // --- LOGO COMPONENT ---
 const Logo = ({ toggleSidebar }) => {
@@ -58,11 +60,12 @@ const UserDropdown = ({ handleLogout }) => {
 const Navbar = ({ toggleSidebar }) => {
     const [showDropdown, setShowDropdown] = useState(false);
     const [imageError, setImageError] = useState(false);
-    const user = JSON.parse(localStorage.getItem("user"));
+
+    const dispatch = useDispatch();
+    const user = useSelector((state) => state.user.user);
 
     const handleLogout = () => {
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
+        dispatch(logout());
         toast.success("Logged out successfully");
         setShowDropdown(false);
         window.location.href = "/";
@@ -79,10 +82,8 @@ const Navbar = ({ toggleSidebar }) => {
         <nav className="bg-white shadow-md fixed top-0 left-0 right-0 z-50">
             <div className="flex items-center justify-between px-4 md:px-6 py-4">
 
-                {/* --- LOGO SECTION --- */}
                 <Logo toggleSidebar={toggleSidebar} />
 
-                {/* --- USER ACTION SECTION --- */}
                 <div className="relative">
                     <button
                         onClick={() => setShowDropdown(!showDropdown)}
@@ -105,7 +106,6 @@ const Navbar = ({ toggleSidebar }) => {
                         </div>
                     </button>
 
-                    {/* --- DROPDOWN SECTION --- */}
                     {showDropdown && (
                         <UserDropdown handleLogout={handleLogout} />
                     )}

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { Star, ArrowLeft, Loader, Send, BookOpen, CheckCircle2, BookmarkPlus } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import { getBookById } from "../../services/bookService";
 import { addToShelf } from "../../services/shelfService";
 import { createReview, getApprovedReviewsByBook } from "../../services/reviewService";
-
-// --- SUB-COMPONENTS ---
+import { setBookDetails } from "../../redux/slices/bookSlice";
 
 const ReviewCard = ({ review }) => (
     <div className="bg-gray-50/50 p-4 md:p-6 rounded-2xl border border-gray-100 mb-4 transition-all hover:bg-white hover:shadow-sm">
@@ -35,7 +35,10 @@ const ReviewCard = ({ review }) => (
 const BookDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [book, setBook] = useState(null);
+    const dispatch = useDispatch();
+
+    const book = useSelector((state) => state.books?.currentBook);
+
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [addingToShelf, setAddingToShelf] = useState(false);
@@ -52,7 +55,7 @@ const BookDetails = () => {
         try {
             setLoading(true);
             const data = await getBookById(id);
-            setBook(data.book);
+            dispatch(setBookDetails(data.book));
         } catch (error) {
             toast.error("Failed to fetch book details");
             navigate("/browse");
@@ -98,7 +101,7 @@ const BookDetails = () => {
         }
     };
 
-    if (loading) return (
+    if (loading && !book) return (
         <div className="min-h-screen bg-white flex flex-col justify-center items-center gap-4">
             <Loader className="w-10 h-10 animate-spin text-secondary" />
             <p className="text-gray-400 font-medium animate-pulse">Loading book details...</p>
@@ -111,7 +114,6 @@ const BookDetails = () => {
         <div className="min-h-screen bg-gray-50/50 pb-12">
             <ToastContainer position="top-right" autoClose={2000} hideProgressBar />
 
-            {/* TOP NAVIGATION */}
             <div className="bg-white border-b border-gray-100 sticky top-0 z-30 px-4 py-4">
                 <div className="max-w-6xl mx-auto flex items-center justify-between">
                     <button onClick={() => navigate("/browse")} className="flex items-center gap-2 text-gray-600 font-bold text-sm hover:text-secondary transition-colors cursor-pointer">
@@ -125,7 +127,6 @@ const BookDetails = () => {
                 <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 p-6 md:p-12">
 
-                        {/* LEFT: BOOK COVER */}
                         <div className="lg:col-span-4 flex justify-center">
                             <div className="relative group w-full max-w-70 md:max-w-full">
                                 <img
@@ -139,7 +140,6 @@ const BookDetails = () => {
                             </div>
                         </div>
 
-                        {/* RIGHT: BOOK INFO */}
                         <div className="lg:col-span-8">
                             <div className="mb-8 text-center lg:text-left">
                                 <h1 className="text-3xl md:text-5xl font-black text-gray-800 leading-tight mb-3">
@@ -147,7 +147,6 @@ const BookDetails = () => {
                                 </h1>
                                 <p className="text-lg md:text-2xl text-gray-400 font-medium mb-6">by <span className="text-secondary">{book.author}</span></p>
 
-                                {/* RATING DISPLAY */}
                                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 mb-8">
                                     <div className="flex items-center gap-1 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-100">
                                         <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
@@ -167,7 +166,6 @@ const BookDetails = () => {
                                     {book.description}
                                 </p>
 
-                                {/* ACTION BUTTONS */}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <button
                                         onClick={() => handleAddToShelf("wantToRead")}
@@ -195,7 +193,6 @@ const BookDetails = () => {
                         </div>
                     </div>
 
-                    {/* REVIEWS SECTION */}
                     <div className="bg-gray-50/30 p-6 md:p-12 border-t border-gray-100">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
                             <div>
@@ -212,7 +209,6 @@ const BookDetails = () => {
                             )}
                         </div>
 
-                        {/* REVIEW FORM */}
                         {showReviewForm && (
                             <div className="bg-white p-6 md:p-8 rounded-4xl border border-secondary/10 shadow-xl mb-10 animate-in slide-in-from-top-4 duration-300">
                                 <div className="flex justify-between items-center mb-6">
@@ -255,7 +251,6 @@ const BookDetails = () => {
                             </div>
                         )}
 
-                        {/* REVIEWS LIST */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {reviews.map((review) => (
                                 <ReviewCard key={review._id} review={review} />

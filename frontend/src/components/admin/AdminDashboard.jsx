@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Book, Users, MessageSquare, Tag, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getAdminStats } from '../../services/bookService';
 import { getPendingReviews } from '../../services/reviewService';
+import { setAdminData } from '../../redux/slices/adminSlice';
 
 // --- CONSTANTS AND CONFIGURATIONS ---
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
@@ -40,14 +42,12 @@ const StatCard = ({ stat }) => {
 // --- CHART SECTION COMPONENT ---
 const GenreDistributionChart = ({ data }) => {
     if (!data || data.length === 0) return null;
-
-    // Mobile check for chart radius
     const isMobile = window.innerWidth < 768;
 
     return (
         <div className="bg-white rounded-xl shadow-sm p-4 md:p-8 mb-8 border border-gray-100">
             <h2 className="text-lg md:text-2xl font-bold text-secondary mb-6">Books by Genre</h2>
-            <div className="h-75 md:h-100 w-full">
+            <div className="h-75 md:h-100 w-full min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
@@ -57,7 +57,7 @@ const GenreDistributionChart = ({ data }) => {
                             labelLine={false}
                             label={({ name, percent }) => isMobile ? `${(percent * 100).toFixed(0)}%` : `${name}: ${(percent * 100).toFixed(0)}%`}
                             outerRadius={isMobile ? 70 : 120}
-                            innerRadius={isMobile ? 40 : 0}
+                            innerRadius={isMobile ? 40 : 60}
                             fill="#8884d8"
                             dataKey="value"
                         >
@@ -79,50 +79,47 @@ const GenreDistributionChart = ({ data }) => {
 
 // --- MAIN ADMIN DASHBOARD COMPONENT ---
 const AdminDashboard = () => {
-    const [stats, setStats] = useState([
-        { id: 1, title: 'Total Books', value: '0', icon: Book, color: 'bg-blue-500', change: '+0%' },
-        { id: 2, title: 'Total Users', value: '0', icon: Users, color: 'bg-green-500', change: '+0%' },
-        { id: 3, title: 'Pending Reviews', value: '0', icon: MessageSquare, color: 'bg-yellow-500', change: '+0' },
-        { id: 4, title: 'Total Genres', value: '0', icon: Tag, color: 'bg-purple-500', change: '+0' },
-    ]);
-    const [booksPerGenre, setBooksPerGenre] = useState([]);
+    const dispatch = useDispatch();
+    const { adminStats, booksPerGenre } = useSelector((state) => state.admin);
 
     useEffect(() => {
-        fetchStats();
-    }, []);
+        if (!adminStats) {
+            fetchStats();
+        }
+    }, [adminStats]);
 
     const fetchStats = async () => {
         try {
             const adminData = await getAdminStats();
             const reviewsData = await getPendingReviews();
-            setStats([
+
+            const statsArray = [
                 { id: 1, title: 'Total Books', value: adminData.totalBooks.toString(), icon: Book, color: 'bg-blue-500', change: '+12%' },
                 { id: 2, title: 'Total Users', value: adminData.totalUsers.toString(), icon: Users, color: 'bg-green-500', change: '+8%' },
                 { id: 3, title: 'Pending Reviews', value: reviewsData.reviews.length.toString(), icon: MessageSquare, color: 'bg-yellow-500', change: `+${reviewsData.reviews.length}` },
                 { id: 4, title: 'Total Genres', value: adminData.booksPerGenre.length.toString(), icon: Tag, color: 'bg-purple-500', change: '+2' },
-            ]);
-            setBooksPerGenre(adminData.booksPerGenre);
+            ];
+
+            dispatch(setAdminData({
+                stats: statsArray,
+                genres: adminData.booksPerGenre
+            }));
         } catch (error) {
             console.error('Failed to fetch stats:', error);
         }
     };
 
+    if (!adminStats) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+
     return (
         <div className="min-h-screen bg-gray-50 p-3 md:p-6 lg:p-8">
-
-            {/* --- HEADER SECTION --- */}
             <DashboardHeader />
-
-            {/* --- STATS CARDS GRID --- */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
-                {stats.map((stat) => (
+                {adminStats.map((stat) => (
                     <StatCard key={stat.id} stat={stat} />
                 ))}
             </div>
-
-            {/* --- DATA VISUALIZATION SECTION --- */}
             <GenreDistributionChart data={booksPerGenre} />
-
         </div>
     );
 };

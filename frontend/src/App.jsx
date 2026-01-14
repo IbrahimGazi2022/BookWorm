@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   Login,
   Register,
@@ -18,7 +19,7 @@ import {
 import Layout from "./components/layout/Layout";
 
 const App = () => {
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const user = useSelector((state) => state.user.user);
   const token = localStorage.getItem("token");
   const isAuthenticated = user && token;
 
@@ -26,8 +27,8 @@ const App = () => {
     <Router>
       <Routes>
         {/* PUBLIC ROUTES */}
-        <Route path="/" element={isAuthenticated ? <Navigate to={user.role === "Admin" ? "/admin/dashboard" : "/dashboard"} /> : <Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/" element={isAuthenticated ? <Navigate to={user?.role === "Admin" ? "/admin/dashboard" : "/dashboard"} /> : <Login />} />
+        <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Register />} />
 
         {/* ADMIN ROUTES WITH LAYOUT */}
         <Route path="/admin/dashboard" element={isAuthenticated && user?.role === "Admin" ? <Layout><AdminDashboard /></Layout> : <Navigate to="/" />} />
@@ -38,7 +39,7 @@ const App = () => {
         <Route path="/admin/tutorials" element={isAuthenticated && user?.role === "Admin" ? <Layout><ManageTutorials /></Layout> : <Navigate to="/" />} />
 
         {/* USER ROUTES WITH LAYOUT */}
-        <Route path="/dashboard" element={isAuthenticated && user?.role !== "Admin" ? <Layout><UserDashboard /></Layout> : <Navigate to="/" />} />
+        <Route path="/dashboard" element={isAuthenticated ? <Layout><UserDashboard /></Layout> : <Navigate to="/" />} />
         <Route path="/my-library" element={isAuthenticated ? <Layout><MyLibrary /></Layout> : <Navigate to="/" />} />
         <Route path="/browse" element={isAuthenticated ? <Layout><BrowseBooks /></Layout> : <Navigate to="/" />} />
         <Route path="/books/:id" element={isAuthenticated ? <Layout><BookDetails /></Layout> : <Navigate to="/" />} />

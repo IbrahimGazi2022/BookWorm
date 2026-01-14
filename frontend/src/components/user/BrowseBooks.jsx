@@ -1,31 +1,40 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { Search, Filter, Star, Loader, X, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import { getAllBooks } from "../../services/bookService";
 import { getAllGenres } from "../../services/genreService";
+import { setAllBooks, setAllGenres } from "../../redux/slices/bookSlice";
 
 const BrowseBooks = () => {
     const navigate = useNavigate();
-    const [books, setBooks] = useState([]);
-    const [genres, setGenres] = useState([]);
+    const dispatch = useDispatch();
+
+    const books = useSelector((state) => state.books.allBooks);
+    const genres = useSelector((state) => state.books.allGenres);
+
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedGenres, setSelectedGenres] = useState([]);
     const [minRating, setMinRating] = useState(0);
     const [sortBy, setSortBy] = useState("title");
-    const [showFilters, setShowFilters] = useState(false); // Mobile Filter Toggle
+    const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
-        fetchBooks();
-        fetchGenres();
+        if (books.length === 0) {
+            fetchBooks();
+        }
+        if (genres.length === 0) {
+            fetchGenres();
+        }
     }, []);
 
     const fetchBooks = async () => {
         try {
             setLoading(true);
             const data = await getAllBooks();
-            setBooks(data.books);
+            dispatch(setAllBooks(data.books));
         } catch (error) {
             toast.error("Failed to fetch books");
         } finally {
@@ -36,7 +45,7 @@ const BrowseBooks = () => {
     const fetchGenres = async () => {
         try {
             const data = await getAllGenres();
-            setGenres(data.genres);
+            dispatch(setAllGenres(data.genres));
         } catch (error) { console.error("Genre fetch error"); }
     };
 
@@ -57,7 +66,7 @@ const BrowseBooks = () => {
         .filter((book) => {
             const matchesSearch = book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 book.author.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesGenre = selectedGenres.length === 0 || selectedGenres.includes(book.genre._id);
+            const matchesGenre = selectedGenres.length === 0 || selectedGenres.includes(book.genre?._id);
             const matchesRating = book.averageRating >= minRating;
             return matchesSearch && matchesGenre && matchesRating;
         })
@@ -71,15 +80,13 @@ const BrowseBooks = () => {
         <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 lg:p-12">
             <ToastContainer position="top-right" autoClose={2000} hideProgressBar />
 
-            {/* HEADER */}
             <div className="mb-8 md:mb-12">
-                <h1 className="text-3xl md:text-5xl font-black text-gray-800 tracking-tight mb-2">
+                <h1 className="text-3xl md:text-5xl font-black text-gray-800 tracking-wide mb-2">
                     Browse <span className="text-secondary">Library</span>
                 </h1>
                 <p className="text-gray-500 text-sm md:text-lg font-medium">Discover your next favorite masterpiece</p>
             </div>
 
-            {/* SEARCH & MOBILE FILTER TOGGLE */}
             <div className="flex flex-col md:flex-row gap-4 mb-8">
                 <div className="relative flex-1 group">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-secondary transition-colors w-5 h-5" />
@@ -100,12 +107,10 @@ const BrowseBooks = () => {
                 </button>
             </div>
 
-            {/* FILTERS SECTION (Collapsible on Mobile) */}
             <div className={`${showFilters ? 'block' : 'hidden'} md:block bg-white p-6 md:p-8 rounded-4xl shadow-sm border border-gray-50 mb-10 animate-in fade-in slide-in-from-top-4 duration-300`}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
-                    {/* SORT */}
                     <div className="space-y-3">
-                        <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Sort Results</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-gray-400 ml-1 mb-3">Sort Results</label>
                         <div className="relative">
                             <select
                                 value={sortBy}
@@ -120,9 +125,8 @@ const BrowseBooks = () => {
                         </div>
                     </div>
 
-                    {/* RATING */}
                     <div className="space-y-3">
-                        <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Minimum Rating</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-gray-400 ml-1 mb-3">Minimum Rating</label>
                         <div className="flex gap-2">
                             {[0, 3, 4, 5].map((stars) => (
                                 <button
@@ -136,9 +140,8 @@ const BrowseBooks = () => {
                         </div>
                     </div>
 
-                    {/* GENRE MULTI-SELECT */}
                     <div className="md:col-span-2 lg:col-span-1 space-y-3">
-                        <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Genres</label>
+                        <label className=" block text-xs font-black uppercase tracking-widest text-gray-400 ml-1 mb-3">Genres</label>
                         <div className="flex flex-wrap gap-2">
                             {genres.slice(0, 6).map((genre) => (
                                 <button
@@ -163,7 +166,6 @@ const BrowseBooks = () => {
                 </div>
             </div>
 
-            {/* BOOKS GRID */}
             {loading ? (
                 <div className="flex flex-col justify-center items-center py-24 gap-4">
                     <Loader className="w-10 h-10 animate-spin text-secondary" />
@@ -214,7 +216,6 @@ const BrowseBooks = () => {
                 </div>
             )}
 
-            {/* EMPTY STATE */}
             {!loading && filteredAndSortedBooks.length === 0 && (
                 <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed border-gray-200">
                     <Search className="w-16 h-16 text-gray-100 mx-auto mb-4" />

@@ -2,11 +2,14 @@ import { Loader, Mail, Lock, ArrowRight } from "lucide-react";
 import React, { useState } from "react";
 import "react-toastify/dist/ReactToastify.css";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import { loginUser } from "../../services/authService";
+import { setProfile } from "../../redux/slices/authSlice";
 
 const Login = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const [loading, setLoading] = useState(false);
 
     // --- FORM STATE ---
@@ -34,18 +37,19 @@ const Login = () => {
         try {
             setLoading(true);
             const data = await loginUser(formData);
+
+            // Redux store আপডেট
+            dispatch(setProfile(data.user));
+
             localStorage.setItem("token", data.token);
             localStorage.setItem("user", JSON.stringify(data.user));
             toast.success("Login successful!");
 
-            // ROLE-BASED REDIRECT
+            // ROLE-BASED REDIRECT WITH REFRESH
             setTimeout(() => {
-                if (data.user.role === "Admin") {
-                    navigate("/admin/dashboard");
-                } else {
-                    navigate("/my-library");
-                }
-                window.location.reload();
+                const targetPath = data.user.role === "Admin" ? "/admin/dashboard" : "/my-library";
+                // সরাসরি উইন্ডো লোকেশন চেঞ্জ করে রিফ্রেশসহ রিডাইরেক্ট করা হলো
+                window.location.href = targetPath;
             }, 1000);
 
         } catch (error) {
