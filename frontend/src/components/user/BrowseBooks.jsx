@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, Star, Loader, X, SlidersHorizontal } from "lucide-react";
+import { Search, Filter, Star, Loader, X, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import { getAllBooks } from "../../services/bookService";
 import { getAllGenres } from "../../services/genreService";
@@ -14,6 +14,7 @@ const BrowseBooks = () => {
     const [selectedGenres, setSelectedGenres] = useState([]);
     const [minRating, setMinRating] = useState(0);
     const [sortBy, setSortBy] = useState("title");
+    const [showFilters, setShowFilters] = useState(false); // Mobile Filter Toggle
 
     useEffect(() => {
         fetchBooks();
@@ -36,16 +37,12 @@ const BrowseBooks = () => {
         try {
             const data = await getAllGenres();
             setGenres(data.genres);
-        } catch (error) {
-            console.error("Failed to fetch genres");
-        }
+        } catch (error) { console.error("Genre fetch error"); }
     };
 
     const handleGenreToggle = (genreId) => {
         setSelectedGenres(prev =>
-            prev.includes(genreId)
-                ? prev.filter(id => id !== genreId)
-                : [...prev, genreId]
+            prev.includes(genreId) ? prev.filter(id => id !== genreId) : [...prev, genreId]
         );
     };
 
@@ -56,190 +53,175 @@ const BrowseBooks = () => {
         setSortBy("title");
     };
 
-    // FILTER & SORT BOOKS
     const filteredAndSortedBooks = books
         .filter((book) => {
-            const matchesSearch =
-                book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            const matchesSearch = book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 book.author.toLowerCase().includes(searchTerm.toLowerCase());
-
-            const matchesGenre = selectedGenres.length === 0 ||
-                selectedGenres.includes(book.genre._id);
-
+            const matchesGenre = selectedGenres.length === 0 || selectedGenres.includes(book.genre._id);
             const matchesRating = book.averageRating >= minRating;
-
             return matchesSearch && matchesGenre && matchesRating;
         })
         .sort((a, b) => {
-            if (sortBy === "rating-high") {
-                return b.averageRating - a.averageRating;
-            } else if (sortBy === "rating-low") {
-                return a.averageRating - b.averageRating;
-            } else if (sortBy === "title") {
-                return a.title.localeCompare(b.title);
-            }
-            return 0;
+            if (sortBy === "rating-high") return b.averageRating - a.averageRating;
+            if (sortBy === "rating-low") return a.averageRating - b.averageRating;
+            return a.title.localeCompare(b.title);
         });
 
     return (
-        <div>
-            <ToastContainer position="top-right" autoClose={3000} />
+        <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 lg:p-12">
+            <ToastContainer position="top-right" autoClose={2000} hideProgressBar />
 
             {/* HEADER */}
-            <div className="mb-8">
-                <h1 className="text-4xl font-bold text-secondary mb-2">Browse Books</h1>
-                <p className="text-gray-600">Discover your next favorite read</p>
+            <div className="mb-8 md:mb-12">
+                <h1 className="text-3xl md:text-5xl font-black text-gray-800 tracking-tight mb-2">
+                    Browse <span className="text-secondary">Library</span>
+                </h1>
+                <p className="text-gray-500 text-sm md:text-lg font-medium">Discover your next favorite masterpiece</p>
             </div>
 
-            {/* SEARCH & FILTERS */}
-            <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                {/* SEARCH BAR */}
-                <div className="relative mb-4">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            {/* SEARCH & MOBILE FILTER TOGGLE */}
+            <div className="flex flex-col md:flex-row gap-4 mb-8">
+                <div className="relative flex-1 group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-secondary transition-colors w-5 h-5" />
                     <input
                         type="text"
-                        placeholder="Search by title or author..."
+                        placeholder="Search by title, author..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary"
+                        className="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm focus:ring-4 focus:ring-secondary/10 outline-none transition-all text-sm md:text-base"
                     />
                 </div>
+                <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="md:hidden flex items-center justify-center gap-2 bg-white border border-gray-100 p-4 rounded-2xl font-bold text-gray-700 shadow-sm active:scale-95 transition-all"
+                >
+                    <SlidersHorizontal className="w-5 h-5 text-secondary" />
+                    {showFilters ? "Hide Filters" : "Filters & Sorting"}
+                </button>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {/* FILTERS SECTION (Collapsible on Mobile) */}
+            <div className={`${showFilters ? 'block' : 'hidden'} md:block bg-white p-6 md:p-8 rounded-4xl shadow-sm border border-gray-50 mb-10 animate-in fade-in slide-in-from-top-4 duration-300`}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
                     {/* SORT */}
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            <SlidersHorizontal className="w-4 h-4 inline mr-2" />
-                            Sort By
-                        </label>
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary"
-                        >
-                            <option value="title">Title (A-Z)</option>
-                            <option value="rating-high">Rating (High to Low)</option>
-                            <option value="rating-low">Rating (Low to High)</option>
-                        </select>
-                    </div>
-
-                    {/* RATING FILTER */}
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            <Star className="w-4 h-4 inline mr-2 text-yellow-500" />
-                            Minimum Rating
-                        </label>
-                        <select
-                            value={minRating}
-                            onChange={(e) => setMinRating(Number(e.target.value))}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary"
-                        >
-                            <option value={0}>All Ratings</option>
-                            <option value={1}>1+ Stars</option>
-                            <option value={2}>2+ Stars</option>
-                            <option value={3}>3+ Stars</option>
-                            <option value={4}>4+ Stars</option>
-                            <option value={5}>5 Stars</option>
-                        </select>
-                    </div>
-
-                    {/* CLEAR FILTERS */}
-                    <div className="flex items-end">
-                        <button
-                            onClick={clearFilters}
-                            className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold"
-                        >
-                            Clear Filters
-                        </button>
-                    </div>
-                </div>
-
-                {/* MULTI-SELECT GENRES */}
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        <Filter className="w-4 h-4 inline mr-2" />
-                        Filter by Genres (Multi-select)
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                        {genres.map((genre) => (
-                            <button
-                                key={genre._id}
-                                onClick={() => handleGenreToggle(genre._id)}
-                                className={`px-4 py-2 rounded-full font-semibold transition-colors ${selectedGenres.includes(genre._id)
-                                        ? "bg-secondary text-white"
-                                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                    }`}
+                    <div className="space-y-3">
+                        <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Sort Results</label>
+                        <div className="relative">
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="w-full appearance-none px-5 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-secondary/20 outline-none font-bold text-gray-700 text-sm cursor-pointer"
                             >
-                                {genre.name}
-                                {selectedGenres.includes(genre._id) && (
-                                    <X className="w-4 h-4 inline ml-1" />
-                                )}
-                            </button>
-                        ))}
+                                <option value="title">Alphabetical (A-Z)</option>
+                                <option value="rating-high">Top Rated First</option>
+                                <option value="rating-low">Lowest Rated First</option>
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    {/* RATING */}
+                    <div className="space-y-3">
+                        <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Minimum Rating</label>
+                        <div className="flex gap-2">
+                            {[0, 3, 4, 5].map((stars) => (
+                                <button
+                                    key={stars}
+                                    onClick={() => setMinRating(stars)}
+                                    className={`flex-1 py-3 rounded-2xl text-xs font-black transition-all ${minRating === stars ? 'bg-secondary text-white shadow-lg shadow-secondary/20' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
+                                >
+                                    {stars === 0 ? "All" : `${stars}+ ★`}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* GENRE MULTI-SELECT */}
+                    <div className="md:col-span-2 lg:col-span-1 space-y-3">
+                        <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Genres</label>
+                        <div className="flex flex-wrap gap-2">
+                            {genres.slice(0, 6).map((genre) => (
+                                <button
+                                    key={genre._id}
+                                    onClick={() => handleGenreToggle(genre._id)}
+                                    className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all ${selectedGenres.includes(genre._id) ? 'bg-secondary/10 text-secondary ring-1 ring-secondary' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
+                                >
+                                    {genre.name}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                {/* RESULTS COUNT */}
-                <p className="text-sm text-gray-600 mt-4">
-                    Showing {filteredAndSortedBooks.length} of {books.length} books
-                </p>
+                <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-50">
+                    <p className="text-xs md:text-sm font-bold text-gray-400">
+                        Found <span className="text-gray-800">{filteredAndSortedBooks.length}</span> masterpieces
+                    </p>
+                    <button onClick={clearFilters} className="text-xs font-black text-red-500 hover:text-red-600 uppercase tracking-widest cursor-pointer">
+                        Reset Filters
+                    </button>
+                </div>
             </div>
 
             {/* BOOKS GRID */}
             {loading ? (
-                <div className="flex justify-center items-center p-12">
-                    <Loader className="w-8 h-8 animate-spin text-secondary" />
-                </div>
-            ) : filteredAndSortedBooks.length === 0 ? (
-                <div className="text-center p-12 bg-white rounded-lg shadow-md">
-                    <p className="text-gray-500 text-lg">No books found</p>
-                    <button
-                        onClick={clearFilters}
-                        className="mt-4 bg-secondary text-white px-6 py-2 rounded-lg hover:bg-opacity-90"
-                    >
-                        Clear Filters
-                    </button>
+                <div className="flex flex-col justify-center items-center py-24 gap-4">
+                    <Loader className="w-10 h-10 animate-spin text-secondary" />
+                    <p className="text-gray-400 font-bold animate-pulse">Curating your library...</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-8">
                     {filteredAndSortedBooks.map((book) => (
                         <div
                             key={book._id}
                             onClick={() => navigate(`/books/${book._id}`)}
-                            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
+                            className="group cursor-pointer"
                         >
-                            {/* BOOK COVER */}
-                            <div className="relative h-64 overflow-hidden">
+                            <div className="relative aspect-2/3 overflow-hidden rounded-3xl md:rounded-4xl shadow-sm group-hover:shadow-2xl group-hover:shadow-secondary/20 transition-all duration-500">
                                 <img
                                     src={book.coverImage}
                                     alt={book.title}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                 />
-                                <div className="absolute top-2 right-2 bg-secondary text-white px-2 py-1 rounded-full text-xs font-semibold">
-                                    {book.genre?.name}
+                                <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <div className="absolute top-3 left-3">
+                                    <span className="bg-white/90 backdrop-blur-sm text-secondary text-[9px] md:text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-tighter shadow-sm">
+                                        {book.genre?.name}
+                                    </span>
                                 </div>
                             </div>
 
-                            {/* BOOK INFO */}
-                            <div className="p-4">
-                                <h3 className="font-bold text-lg text-gray-800 mb-1 line-clamp-1">
+                            <div className="mt-4 px-1">
+                                <h3 className="font-black text-gray-800 text-sm md:text-base line-clamp-1 group-hover:text-secondary transition-colors">
                                     {book.title}
                                 </h3>
-                                <p className="text-sm text-gray-600 mb-2">by {book.author}</p>
+                                <p className="text-[11px] md:text-sm text-gray-400 font-bold mb-2 uppercase tracking-wide">{book.author}</p>
 
-                                {/* RATING */}
-                                <div className="flex items-center gap-1">
-                                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                                    <span className="text-sm font-semibold text-gray-700">
-                                        {book.averageRating > 0 ? book.averageRating.toFixed(1) : "No ratings"}
-                                    </span>
-                                    <span className="text-xs text-gray-500">
-                                        ({book.totalReviews} reviews)
+                                <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-0.5 bg-amber-50 px-2 py-0.5 rounded-lg">
+                                        <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                                        <span className="text-[11px] md:text-xs font-black text-amber-700">
+                                            {book.averageRating > 0 ? book.averageRating.toFixed(1) : "N/A"}
+                                        </span>
+                                    </div>
+                                    <span className="text-[10px] md:text-xs text-gray-300 font-bold">
+                                        ({book.totalReviews})
                                     </span>
                                 </div>
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* EMPTY STATE */}
+            {!loading && filteredAndSortedBooks.length === 0 && (
+                <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed border-gray-200">
+                    <Search className="w-16 h-16 text-gray-100 mx-auto mb-4" />
+                    <p className="text-gray-400 font-black text-lg">No books match your criteria</p>
+                    <button onClick={clearFilters} className="mt-4 text-secondary font-bold hover:underline cursor-pointer text-sm">
+                        Try clearing filters
+                    </button>
                 </div>
             )}
         </div>

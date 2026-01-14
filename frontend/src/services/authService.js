@@ -1,5 +1,6 @@
 import API from "../utils/api";
 
+// --- REGISTER USER ---
 export const registerUser = async (userData) => {
     const response = await API.post("/api/auth/register", userData, {
         headers: {
@@ -9,6 +10,7 @@ export const registerUser = async (userData) => {
     return response.data;
 };
 
+// --- LOGIN USER ---
 export const loginUser = async (credentials) => {
     const response = await API.post("/api/auth/login", credentials);
     return response.data;

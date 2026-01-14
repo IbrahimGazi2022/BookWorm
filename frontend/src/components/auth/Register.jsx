@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Upload, X, Loader } from "lucide-react";
+import { Upload, X, Loader, Camera, User, Mail, Lock } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { registerUser } from "../../services/authService";
@@ -18,74 +18,36 @@ const Register = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    // --- HANDLE INPUT CHANGE ---
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // --- HANDLE IMAGE UPLOAD ---
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // VALIDATE FILE SIZE (5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                toast.error("File size must be less than 5MB");
-                return;
-            }
-
-            // VALIDATE FILE TYPE
+            if (file.size > 5 * 1024 * 1024) return toast.error("File size must be less than 5MB");
             const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
-            if (!allowedTypes.includes(file.type)) {
-                toast.error("Only JPG, PNG, and GIF files are allowed");
-                return;
-            }
+            if (!allowedTypes.includes(file.type)) return toast.error("Invalid file type");
 
             setImageFile(file);
-
-            // PREVIEW
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-            };
+            reader.onloadend = () => setImagePreview(reader.result);
             reader.readAsDataURL(file);
         }
     };
 
-    // --- REMOVE IMAGE ---
     const removeImage = () => {
         setImageFile(null);
         setImagePreview(null);
     };
 
-    // --- HANDLE SUBMIT ---
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) return toast.error("All fields are required");
+        if (!imageFile) return toast.error("Please upload a profile photo");
+        if (formData.password !== formData.confirmPassword) return toast.error("Passwords do not match");
+        if (formData.password.length < 6) return toast.error("Password too short");
 
-        // VALIDATION
-        if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
-            toast.error("All fields are required");
-            return;
-        }
-
-        if (!imageFile) {
-            toast.error("Please upload a profile photo");
-            return;
-        }
-
-        if (formData.password !== formData.confirmPassword) {
-            toast.error("Passwords do not match");
-            return;
-        }
-
-        if (formData.password.length < 6) {
-            toast.error("Password must be at least 6 characters");
-            return;
-        }
-
-        // CREATE FORMDATA
         const data = new FormData();
         data.append("name", `${formData.firstName} ${formData.lastName}`);
         data.append("email", formData.email);
@@ -94,204 +56,113 @@ const Register = () => {
 
         try {
             setLoading(true);
-            const response = await registerUser(data);
-            console.log(data);
-            toast.success("Registration successful! Redirecting to login...");
-
-            // RESET FORM
-            setFormData({
-                firstName: "",
-                lastName: "",
-                email: "",
-                password: "",
-                confirmPassword: "",
-            });
-            setImageFile(null);
-            setImagePreview(null);
-
-            // REDIRECT TO LOGIN AFTER 1 SECONDS
-            setTimeout(() => {
-                navigate("/");
-            }, 1000);
-
+            await registerUser(data);
+            toast.success("Account created! Redirecting...");
+            setTimeout(() => navigate("/"), 1500);
         } catch (error) {
-            console.error("Registration Error:", error);
-            if (error.response) {
-                toast.error(error.response.data.message || "Registration failed");
-            } else if (error.request) {
-                toast.error("No response from server. Please try again.");
-            } else {
-                toast.error("An error occurred. Please try again.");
-            }
+            toast.error(error.response?.data?.message || "Registration failed");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-primary py-8 px-4">
-            {/* --- TOAST CONTAINER --- */}
-            <ToastContainer position="top-right" autoClose={3000} />
+        <div className="min-h-screen bg-primary flex items-center justify-center p-4 md:p-8">
+            <ToastContainer position="top-right" autoClose={2000} hideProgressBar />
 
-            <div className="w-full max-w-md bg-white p-8 shadow-lg rounded-xl border border-gray-100">
-                <h2 className="text-3xl font-bold mb-8 text-center text-gray-800">
-                    Create Account
-                </h2>
+            <div className="w-full max-w-2xl bg-white rounded-4xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-500">
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* --- IMAGE UPLOAD SECTION --- */}
-                    <div className="flex flex-col items-center mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-3">
-                            Upload Your Picture *
-                        </label>
+                {/* LEFT SIDE: DECORATIVE/INFO (HIDDEN ON MOBILE) */}
+                <div className="hidden md:flex w-1/3 bg-secondary p-8 text-white flex-col justify-between relative overflow-hidden">
+                    <div className="relative z-10">
+                        <h2 className="text-3xl font-extrabold leading-tight mb-4">Join Our Library</h2>
+                        <p className="text-white/70 text-sm">Create an account to manage your books, write reviews, and more.</p>
+                    </div>
+                    <div className="relative z-10 flex items-center gap-2 text-xs font-bold tracking-widest uppercase opacity-50">
+                        <div className="w-8 h-px bg-white"></div>
+                        Est. 2024
+                    </div>
+                    {/* Abstract Shapes */}
+                    <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                </div>
 
-                        {imagePreview ? (
-                            <div className="relative">
-                                <img
-                                    src={imagePreview}
-                                    alt="Preview"
-                                    className="w-32 h-32 rounded-full object-cover border-4 border-secondary shadow-lg"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={removeImage}
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-700 transition-colors shadow-md"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
+                {/* RIGHT SIDE: FORM */}
+                <div className="flex-1 p-6 md:p-10">
+                    <div className="text-center md:text-left mb-8">
+                        <h2 className="text-2xl md:text-3xl font-black text-gray-800 md:hidden mb-2">Create Account</h2>
+                        <p className="text-gray-500 text-sm md:text-base font-medium">Please fill in your details</p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        {/* PROFILE PHOTO UPLOAD */}
+                        <div className="flex flex-col items-center md:items-start mb-6">
+                            <div className="relative group">
+                                {imagePreview ? (
+                                    <div className="relative">
+                                        <img src={imagePreview} alt="Preview" className="w-24 h-24 md:w-28 md:h-28 rounded-3xl object-cover ring-4 ring-secondary/20 shadow-xl" />
+                                        <button type="button" onClick={removeImage} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 shadow-lg hover:bg-red-600 transition-all cursor-pointer">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label className="w-24 h-24 md:w-28 md:h-28 flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-3xl cursor-pointer hover:border-secondary hover:bg-secondary/5 transition-all group">
+                                        <Camera className="w-8 h-8 text-gray-300 group-hover:text-secondary transition-colors" />
+                                        <span className="text-[10px] md:text-xs font-bold text-gray-400 mt-2">PHOTO</span>
+                                        <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                                    </label>
+                                )}
                             </div>
-                        ) : (
-                            <label className="w-32 h-32 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-full cursor-pointer hover:border-secondary transition-colors bg-gray-50 hover:bg-gray-100">
-                                <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                                <span className="text-xs text-gray-500 text-center px-2">
-                                    Upload Photo
-                                </span>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    className="hidden"
-                                />
-                            </label>
-                        )}
-                        <p className="text-xs text-gray-500 mt-2 text-center">
-                            JPG, PNG or GIF (Max 5MB)
+                        </div>
+
+                        {/* NAME GRID */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-gray-700 ml-1 italic">First Name</label>
+                                <div className="relative">
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} placeholder="John" className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-secondary/10 focus:border-secondary outline-none transition-all text-sm" required />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-gray-700 ml-1 italic">Last Name</label>
+                                <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Doe" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-secondary/10 focus:border-secondary outline-none transition-all text-sm" required />
+                            </div>
+                        </div>
+
+                        {/* EMAIL */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-gray-700 ml-1 italic">Email Address</label>
+                            <div className="relative">
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="your@email.com" className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-secondary/10 focus:border-secondary outline-none transition-all text-sm" required />
+                            </div>
+                        </div>
+
+                        {/* PASSWORDS GRID */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-gray-700 ml-1 italic">Password</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="••••••••" className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-secondary/10 focus:border-secondary outline-none transition-all text-sm" required />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-gray-700 ml-1 italic">Confirm</label>
+                                <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="••••••••" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-secondary/10 focus:border-secondary outline-none transition-all text-sm" required />
+                            </div>
+                        </div>
+
+                        {/* SUBMIT */}
+                        <button type="submit" disabled={loading} className="w-full bg-secondary text-white py-4 rounded-2xl font-bold text-sm uppercase tracking-widest shadow-xl shadow-secondary/20 hover:shadow-secondary/40 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 mt-4 cursor-pointer">
+                            {loading ? <Loader className="w-5 h-5 animate-spin" /> : "Create Account"}
+                        </button>
+
+                        <p className="text-center text-xs md:text-sm text-gray-500 font-medium pt-2">
+                            Already have an account? <Link to="/" className="text-secondary font-bold hover:underline">Login</Link>
                         </p>
-                    </div>
-
-                    {/* --- NAME INPUTS --- */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                First Name *
-                            </label>
-                            <input
-                                type="text"
-                                name="firstName"
-                                value={formData.firstName}
-                                onChange={handleChange}
-                                placeholder="John"
-                                autoComplete="given-name"
-                                required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Last Name *
-                            </label>
-                            <input
-                                type="text"
-                                name="lastName"
-                                value={formData.lastName}
-                                onChange={handleChange}
-                                placeholder="Doe"
-                                autoComplete="family-name"
-                                required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition"
-                            />
-                        </div>
-                    </div>
-
-                    {/* --- EMAIL INPUT --- */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Email *
-                        </label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="your@email.com"
-                            autoComplete="email"
-                            required
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition"
-                        />
-                    </div>
-
-                    {/* --- PASSWORD INPUT --- */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Password *
-                        </label>
-                        <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            placeholder="••••••••"
-                            autoComplete="new-password"
-                            required
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition"
-                        />
-                    </div>
-
-                    {/* --- CONFIRM PASSWORD INPUT --- */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Confirm Password *
-                        </label>
-                        <input
-                            type="password"
-                            name="confirmPassword"
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            placeholder="••••••••"
-                            autoComplete="new-password"
-                            required
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition"
-                        />
-                    </div>
-
-                    {/* --- REGISTER BUTTON --- */}
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-secondary text-white py-3 rounded-lg transition-all shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] font-bold tracking-wide uppercase hover:bg-[#2a3d28] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                        {loading ? (
-                            <>
-                                <Loader className="w-5 h-5 animate-spin" />
-                                Registering...
-                            </>
-                        ) : (
-                            "Register"
-                        )}
-                    </button>
-
-                    {/* --- LOGIN LINK --- */}
-                    <div className="text-center text-sm text-gray-500 pt-2">
-                        Have an account?{" "}
-                        <Link
-                            to="/"
-                            className="text-secondary font-bold hover:underline"
-                        >
-                            Login
-                        </Link>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     );

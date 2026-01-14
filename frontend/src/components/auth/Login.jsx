@@ -1,10 +1,9 @@
-import { Loader } from "lucide-react";
+import { Loader, Mail, Lock, ArrowRight } from "lucide-react";
 import React, { useState } from "react";
 import "react-toastify/dist/ReactToastify.css";
 import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import { loginUser } from "../../services/authService";
-
 
 const Login = () => {
     const navigate = useNavigate();
@@ -28,7 +27,7 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.email || !formData.password) {
-            toast.error("All fields are required");
+            toast.error("Please fill in all fields");
             return;
         }
 
@@ -37,12 +36,7 @@ const Login = () => {
             const data = await loginUser(formData);
             localStorage.setItem("token", data.token);
             localStorage.setItem("user", JSON.stringify(data.user));
-            toast.success("Login successful! Redirecting...");
-
-            setFormData({
-                email: "",
-                password: "",
-            });
+            toast.success("Login successful!");
 
             // ROLE-BASED REDIRECT
             setTimeout(() => {
@@ -51,93 +45,121 @@ const Login = () => {
                 } else {
                     navigate("/my-library");
                 }
-                window.location.reload(); 
-            }, 1500);
+                window.location.reload();
+            }, 1000);
 
         } catch (error) {
-            if (error.response) {
-                toast.error(error.response.data.message || "Login failed");
-            } else if (error.request) {
-                toast.error("No response from server. Please try again.");
-            } else {
-                toast.error("An error occurred. Please try again.");
-            }
+            toast.error(error.response?.data?.message || "Invalid credentials");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-primary">
-            <ToastContainer position="top-right" autoClose={3000} />
+        <div className="min-h-screen flex items-center justify-center bg-primary p-4 md:p-6">
+            <ToastContainer position="top-right" autoClose={2000} hideProgressBar />
 
-            <div className="w-full max-w-md bg-white p-8 shadow-lg rounded-xl border border-gray-100">
-                <h2 className="text-3xl font-bold mb-8 text-center text-gray-800">
-                    Welcome Back
-                </h2>
+            <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-500">
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* --- EMAIL INPUT --- */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Email *
-                        </label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="your@email.com"
-                            autoComplete="email"
-                            required
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition"
-                        />
+                {/* TOP DECORATION/HEADER */}
+                <div className="bg-secondary p-8 text-white text-center relative overflow-hidden">
+                    <div className="relative z-10">
+                        <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-2">
+                            Welcome Back
+                        </h2>
+                        <p className="text-white/80 text-xs md:text-sm font-medium">
+                            Enter your credentials to access your library
+                        </p>
                     </div>
+                    {/* Decorative Circles */}
+                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                    <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-black/10 rounded-full blur-2xl"></div>
+                </div>
 
-                    {/* --- PASSWORD INPUT --- */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Password *
-                        </label>
-                        <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            placeholder="••••••••"
-                            autoComplete="current-password"
-                            required
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition"
-                        />
-                    </div>
+                <div className="p-6 md:p-10">
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        {/* --- EMAIL INPUT --- */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs md:text-sm font-bold text-gray-700 ml-1">
+                                Email Address
+                            </label>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-secondary transition-colors" />
+                                </div>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    placeholder="your@email.com"
+                                    autoComplete="email"
+                                    required
+                                    className="w-full pl-11 pr-4 py-3 md:py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-secondary/10 focus:border-secondary focus:bg-white transition-all text-sm md:text-base"
+                                />
+                            </div>
+                        </div>
 
-                    {/* --- LOGIN BUTTON --- */}
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-secondary text-white py-3 rounded-lg transition-all shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] font-bold uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                        {loading ? (
-                            <>
-                                <Loader className="w-5 h-5 animate-spin" />
-                                Logging in...
-                            </>
-                        ) : (
-                            "Login"
-                        )}
-                    </button>
+                        {/* --- PASSWORD INPUT --- */}
+                        <div className="space-y-1.5">
+                            <div className="flex justify-between items-center ml-1">
+                                <label className="text-xs md:text-sm font-bold text-gray-700">
+                                    Password
+                                </label>
+                                <Link to="#" className="text-[11px] md:text-xs font-bold text-secondary hover:underline">
+                                    Forgot?
+                                </Link>
+                            </div>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-secondary transition-colors" />
+                                </div>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    placeholder="••••••••"
+                                    autoComplete="current-password"
+                                    required
+                                    className="w-full pl-11 pr-4 py-3 md:py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-secondary/10 focus:border-secondary focus:bg-white transition-all text-sm md:text-base"
+                                />
+                            </div>
+                        </div>
 
-                    {/* --- REGISTER LINK --- */}
-                    <div className="text-center text-sm text-gray-500 pt-2">
-                        Don't have an account?{" "}
-                        <Link
-                            to="/register"
-                            className="text-secondary font-bold hover:underline"
+                        {/* --- LOGIN BUTTON --- */}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-secondary text-white py-3.5 md:py-4 rounded-2xl transition-all shadow-lg shadow-secondary/20 hover:shadow-secondary/40 active:scale-[0.98] font-bold text-sm md:text-base uppercase tracking-widest disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 cursor-pointer mt-2"
                         >
-                            Register
-                        </Link>
-                    </div>
-                </form>
+                            {loading ? (
+                                <>
+                                    <Loader className="w-5 h-5 animate-spin" />
+                                    Authenticating...
+                                </>
+                            ) : (
+                                <>
+                                    Sign In
+                                    <ArrowRight className="w-4 md:w-5 h-4 md:h-5" />
+                                </>
+                            )}
+                        </button>
+
+                        {/* --- REGISTER LINK --- */}
+                        <div className="text-center pt-4">
+                            <p className="text-xs md:text-sm text-gray-500 font-medium">
+                                New to our library?{" "}
+                                <Link
+                                    to="/register"
+                                    className="text-secondary font-bold hover:text-secondary/80 transition-colors ml-1"
+                                >
+                                    Create Account
+                                </Link>
+                            </p>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );
